@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">
+  <defs>
+    <pattern id="star-tile" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <!-- إطار التماس بين البلاطات: معين صغير في كل ركن -->
+      <polygon points="0,4 4,0 8,4 4,8" fill="none" stroke="#0A4A30" stroke-width="1" />
+      <polygon points="80,4 84,0 88,4 84,8" fill="none" stroke="#0A4A30" stroke-width="1" />
+      <polygon points="0,76 4,72 8,76 4,80" fill="none" stroke="#0A4A30" stroke-width="1" />
+      <polygon points="80,76 84,72 88,76 84,80" fill="none" stroke="#0A4A30" stroke-width="1" />
+
+      <!-- النجمة الثمانية: تراكب معين (مربع مدوّر 45°) فوق مربع محوري -->
+      <polygon points="40,12 68,40 40,68 12,40" fill="none" stroke="#0A4A30" stroke-width="1" />
+      <polygon points="59.8,20.2 59.8,59.8 20.2,59.8 20.2,20.2" fill="none" stroke="#0A4A30" stroke-width="1" />
+
+      <!-- إطار دائري خفيف حول النجمة -->
+      <circle cx="40" cy="40" r="30" fill="none" stroke="#0A4A30" stroke-width="0.6" />
+    </pattern>
+  </defs>
+  <rect width="80" height="80" fill="url(#star-tile)" />
+</svg>

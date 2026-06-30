@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-sand text-night antialiased;
+  }
+
+  ::selection {
+    @apply bg-gold-light text-night;
+  }
+
+  :focus-visible {
+    outline: 2px solid #c9a227;
+    outline-offset: 3px;
+  }
+}
+
+@layer utilities {
+  /* زخرفة ركنية صغيرة (تذهيب) في زوايا البطاقات المميزة */
+  .corner-ornament::before,
+  .corner-ornament::after {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #c9a227;
+    opacity: 0.8;
+  }
+  .corner-ornament::before {
+    top: 10px;
+    right: 10px;
+    border-bottom: none;
+    border-left: none;
+    border-top-right-radius: 8px;
+  }
+  .corner-ornament::after {
+    bottom: 10px;
+    left: 10px;
+    border-top: none;
+    border-right: none;
+    border-bottom-left-radius: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
