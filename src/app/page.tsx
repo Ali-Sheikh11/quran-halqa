@@ -60,7 +60,7 @@ export default function HomePage({
           <FeatureCard
             title="التنافس في الخير"
             description="﴿وَفِي ذَٰلِكَ فَلْيَتَنَافَسِ الْمُتَنَافِسُونَ﴾ — نُذكّر طلابنا دومًا أن التنافس هنا تنافسٌ محبّب، غايته التقرّب إلى الله بحفظ كتابه."
-            imageUrl="https://images.unsplash.com/photo-1591462057997-f584e0b0409a?q=80&w=600&auto=format&fit=crop"
+            imageUrl="https://i.dzs.cloud/www.echoroukonline.com/wp-content/uploads/2021/03/%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86-2-1.jpg"
           />
           <FeatureCard
             title="صبر وثبات"
