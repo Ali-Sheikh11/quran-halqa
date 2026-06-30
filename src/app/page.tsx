@@ -28,7 +28,7 @@ export default function HomePage({
               منارة القرآن
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-sand/85 sm:text-lg">
-              حلقة قرآنية مباركة نتابع فيها حفظ أبنائنا خطوة بخطوة،
+              حلقة قرآنية مباركة نتابع فيها حفظ أبنائنا وبناتنا خطوة بخطوة،
               ونحتسب كل آية يحفظونها وكل جهد يبذلونه، تشجيعًا لهم على
               التنافس في الخير والثبات على كتاب الله.
             </p>
@@ -55,14 +55,17 @@ export default function HomePage({
           <FeatureCard
             title="فضل حفظ القرآن"
             description="«خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ» — كل آية تُحفظ هي زاد للدنيا ونور يوم القيامة، وكل جلسة في الحلقة خطوة في هذا الطريق المبارك."
+            imageUrl="https://images.unsplash.com/photo-1609599006353-e629aaab31ce?q=80&w=600&auto=format&fit=crop"
           />
           <FeatureCard
             title="التنافس في الخير"
             description="﴿وَفِي ذَٰلِكَ فَلْيَتَنَافَسِ الْمُتَنَافِسُونَ﴾ — نُذكّر طلابنا دومًا أن التنافس هنا تنافسٌ محبّب، غايته التقرّب إلى الله بحفظ كتابه."
+            imageUrl="https://images.unsplash.com/photo-1591462057997-f584e0b0409a?q=80&w=600&auto=format&fit=crop"
           />
           <FeatureCard
             title="صبر وثبات"
             description="حفظ القرآن رحلة صبر وتكرار، والثبات عليها بركة. نسأل الله أن يُعين كل طالب وطالبة على إتمامها وأن يجعلها في موازين حسناتهم."
+            imageUrl="https://images.unsplash.com/photo-1564507004663-b6dfb3c824d5?q=80&w=600&auto=format&fit=crop"
           />
         </div>
       </section>
@@ -73,19 +76,33 @@ export default function HomePage({
 function FeatureCard({
   title,
   description,
+  imageUrl,
 }: {
   title: string;
   description: string;
+  imageUrl?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-emerald-100 bg-white px-6 py-7 shadow-sm transition hover:-translate-y-1 hover:shadow-ornate">
-      <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-          <polygon points="12,3 21,12 12,21 3,12" fill="none" stroke="#0F6B45" strokeWidth="1.4" />
-        </svg>
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-ornate">
+      {imageUrl && (
+        <div className="h-40 w-full overflow-hidden bg-emerald-50">
+          <img 
+            src={imageUrl} 
+            alt={title} 
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" 
+          />
+        </div>
+      )}
+      <div className="flex flex-1 flex-col px-6 py-7">
+        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+            <polygon points="12,3 21,12 12,21 3,12" fill="none" stroke="#0F6B45" strokeWidth="1.4" />
+          </svg>
+        </div>
+        <h3 className="mb-2 text-lg font-bold text-emerald-800">{title}</h3>
+        <p className="text-sm leading-relaxed text-night/70">{description}</p>
       </div>
-      <h3 className="mb-2 text-lg font-bold text-emerald-800">{title}</h3>
-      <p className="text-sm leading-relaxed text-night/70">{description}</p>
     </div>
   );
 }
