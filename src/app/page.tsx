@@ -55,7 +55,7 @@ export default function HomePage({
           <FeatureCard
             title="فضل حفظ القرآن"
             description="«خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ» — كل آية تُحفظ هي زاد للدنيا ونور يوم القيامة، وكل جلسة في الحلقة خطوة في هذا الطريق المبارك."
-            imageUrl="https://i.dzs.cloud/www.echoroukonline.com/wp-content/uploads/2021/03/%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86-2-1.jpg"
+            imageUrl="https://i.suar.me/Mgro3/l"
           />
           <FeatureCard
             title="التنافس في الخير"
