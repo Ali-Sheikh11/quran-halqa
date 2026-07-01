@@ -42,6 +42,40 @@ export default async function StudentsPage() {
               : "عرض قائمة طلاب الحلقة الحالية."}
           </p>
         </div>
+        
+        {/* بطاقة آلية احتساب النقاط */}
+        <div className="mb-8 rounded-xl border border-emerald-100/50 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="mb-4 font-verse text-lg font-bold text-emerald-800 sm:text-xl">
+            📋 آلية احتساب النقاط
+          </h2>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <li className="flex items-center gap-2 text-sm text-night/80">
+              <span className="text-base">📖</span> الحفظ والمراجعة
+            </li>
+            <li className="flex items-center gap-2 text-sm text-night/80">
+              <span className="text-base">🎙️</span> جودة التسميع
+            </li>
+            <li className="flex items-center gap-2 text-sm text-night/80">
+              <span className="text-base">📅</span> المواظبة على الحضور
+            </li>
+            <li className="flex items-center gap-2 text-sm text-night/80">
+              <span className="text-base">🤝</span> حسن التعاون
+            </li>
+            <li className="flex items-center gap-2 text-sm text-night/80">
+              <span className="text-base">🌿</span> الأدب وحسن الخلق
+            </li>
+            <li className="flex items-center gap-2 text-sm text-night/80">
+              <span className="text-base">💡</span> المشاركة والاجتهاد
+            </li>
+            <li className="flex items-center gap-2 text-sm text-night/80">
+              <span className="text-base">🕌</span> احترام آداب الحلقة
+            </li>
+          </ul>
+          <p className="mt-5 text-xs leading-relaxed text-night/50">
+            النقاط وسيلة للتشجيع والتحفيز، وهدفها غرس حب القرآن، وحسن الخلق، والالتزام بآداب الحلقة، وليست معيارًا للتفاضل بين الطلاب.
+          </p>
+        </div>
+
 
         <StudentsManager initialStudents={(students as Student[]) ?? []} role={role} />
       </div>
