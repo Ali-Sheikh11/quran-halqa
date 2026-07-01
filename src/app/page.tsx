@@ -64,7 +64,7 @@ export default function HomePage({
           />
           <FeatureCard
             title="صبر وثبات"
-            description="حفظ القرآن رحلة صبر وتكرار، والثبات عليها بركة. نسأل الله أن يُعين كل طالب وطالبة على إتمامها وأن يجعلها في موازين حسناتهم."
+            description="حفظ القرآن رحلة صبر وتكرار، والثبات عليها بركة. نسأل الله أن يُعين كل طالب على إتمامها وأن يجعلها في موازين حسناتهم."
             imageUrl="https://pbs.twimg.com/media/Cm3WCnnWAAAbQ2Y.jpg"
           />
         </div>
