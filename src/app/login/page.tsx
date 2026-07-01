@@ -27,7 +27,7 @@ export default async function LoginPage() {
         <div className="mb-6 text-center">
           <span className="font-verse text-2xl font-bold text-sand">منارة القرآن</span>
           <p className="mt-2 text-sm text-sand/80">
-            دخول خاص بحسابات المعلّم/المسؤول والمشاهدين لإدارة المنصة ومتابعتها
+            دخول خاص بحسابات المعلّم/المسؤول لإدارة المنصة ومتابعتها
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export default async function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-sand/70">
-          هذه الصفحة مخصّصة للحسابات المُسجَّلة مسبقًا فقط (مسؤول أو مشاهد)، ولا يوجد تسجيل عام للزوّار.
+          هذه الصفحة مخصّصة للحسابات المُسجَّلة مسبقًا فقط (مسؤول أو معلم)، ولا يوجد تسجيل عام للزوّار.
         </p>
       </div>
     </section>
