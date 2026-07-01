@@ -42,36 +42,36 @@ export default async function StudentsPage() {
               : "عرض قائمة طلاب الحلقة الحالية."}
           </p>
         </div>
-        
+
         {/* بطاقة آلية احتساب النقاط */}
         <div className="mb-8 rounded-xl border border-emerald-100/50 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="mb-4 font-verse text-lg font-bold text-emerald-800 sm:text-xl">
+          <h2 className="mb-5 font-verse text-xl font-bold text-emerald-800 sm:text-2xl">
             📋 آلية احتساب النقاط
           </h2>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            <li className="flex items-center gap-2 text-sm text-night/80">
-              <span className="text-base">📖</span> الحفظ والمراجعة
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <li className="flex items-center gap-2 text-base font-medium text-night">
+              <span className="text-lg">📖</span> الحفظ والمراجعة
             </li>
-            <li className="flex items-center gap-2 text-sm text-night/80">
-              <span className="text-base">🎙️</span> جودة التسميع
+            <li className="flex items-center gap-2 text-base font-medium text-night">
+              <span className="text-lg">🎙️</span> جودة التسميع
             </li>
-            <li className="flex items-center gap-2 text-sm text-night/80">
-              <span className="text-base">📅</span> المواظبة على الحضور
+            <li className="flex items-center gap-2 text-base font-medium text-night">
+              <span className="text-lg">📅</span> المواظبة على الحضور
             </li>
-            <li className="flex items-center gap-2 text-sm text-night/80">
-              <span className="text-base">🤝</span> حسن التعاون
+            <li className="flex items-center gap-2 text-base font-medium text-night">
+              <span className="text-lg">🤝</span> حسن التعاون
             </li>
-            <li className="flex items-center gap-2 text-sm text-night/80">
-              <span className="text-base">🌿</span> الأدب وحسن الخلق
+            <li className="flex items-center gap-2 text-base font-medium text-night">
+              <span className="text-lg">🌿</span> الأدب وحسن الخلق
             </li>
-            <li className="flex items-center gap-2 text-sm text-night/80">
-              <span className="text-base">💡</span> المشاركة والاجتهاد
+            <li className="flex items-center gap-2 text-base font-medium text-night">
+              <span className="text-lg">💡</span> المشاركة والاجتهاد
             </li>
-            <li className="flex items-center gap-2 text-sm text-night/80">
-              <span className="text-base">🕌</span> احترام آداب الحلقة
+            <li className="flex items-center gap-2 text-base font-medium text-night">
+              <span className="text-lg">🕌</span> احترام آداب الحلقة
             </li>
           </ul>
-          <p className="mt-5 text-xs leading-relaxed text-night/50">
+          <p className="mt-6 text-sm font-medium leading-relaxed text-night/70">
             النقاط وسيلة للتشجيع والتحفيز، وهدفها غرس حب القرآن، وحسن الخلق، والالتزام بآداب الحلقة، وليست معيارًا للتفاضل بين الطلاب.
           </p>
         </div>
