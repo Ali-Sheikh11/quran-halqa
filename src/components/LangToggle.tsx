@@ -1,4 +1,3 @@
-// src/components/LangToggle.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -15,22 +14,19 @@ export default function LangToggle() {
     const next: Locale = locale === "ar" ? "tr" : "ar";
     saveLocale(next);
     setLocale(next);
-    // إعادة تحميل الصفحة لتطبيق اللغة على كل المكوّنات
     window.location.reload();
   }
 
   const flag  = locale === "ar" ? "🇹🇷" : "🇸🇦";
-  const label = locale === "ar" ? "Türkçe" : "العربية";
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={`التبديل إلى ${label}`}
-      className="flex h-8 items-center gap-1.5 rounded-full border border-gold/40 px-2.5 text-sand transition hover:bg-white/10"
+      aria-label="تبديل اللغة"
+      className="flex h-8 w-8 items-center justify-center rounded-full border border-gold/40 text-base text-sand transition hover:bg-white/10"
     >
-      <span className="text-base leading-none">{flag}</span>
-      <span className="text-xs font-medium">{label}</span>
+      {flag}
     </button>
   );
 }
