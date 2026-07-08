@@ -29,13 +29,34 @@ export const translations = {
     pointsError:       "تعذّر تحديث النقاط. تأكد من تسجيل دخولك كمسؤول وحاول مجددًا.",
 
     // Header
-    studentsNav:    "الطلاب والترتيب",
+    studentsNav:    "الطلاب",
     adminNav:       "لوحة التحكم",
-    loginNav:       "دخول المسؤول",
+    loginNav:       "تسجيل دخول المسؤول",
+
+    // students/page.tsx
+    studentsTitle:       "الطلاب",
+    studentsDescAdmin:   "يمكنك إضافة طلاب جدد، وتعديل أسمائهم وصورهم، أو حذفهم.",
+    studentsDescViewer:  "عرض قائمة طلاب الحلقة الحالية.",
+    pointsSystemTitle:   "📋 آلية احتساب النقاط",
+    pointsSystemNote:    "النقاط وسيلة للتشجيع والتحفيز، وهدفها غرس حب القرآن، وحسن الخلق، والالتزام بآداب الحلقة، وليست معيارًا للتفاضل بين الطلاب.",
+    pointsItem1:  "الحفظ والمراجعة",
+    pointsItem2:  "جودة التسميع",
+    pointsItem3:  "المواظبة على الحضور",
+    pointsItem4:  "حسن التعاون",
+    pointsItem5:  "الأدب وحسن الخلق",
+    pointsItem6:  "المشاركة والاجتهاد",
+    pointsItem7:  "احترام آداب الحلقة",
+
+    // page.tsx (الرئيسية)
+    heroDesc:     "حلقة قرآنية مباركة نتابع فيها حفظ أبنائنا خطوة بخطوة، ونحتسب كل آية يحفظونها وكل جهد يبذلونه، تشجيعًا لهم على التنافس في الخير والثبات على كتاب الله.",
+    heroBtn:      "تابع الطلاب وترتيبهم",
+    card1Title:   "فضل حفظ القرآن",
+    card2Title:   "التنافس في الخير",
+    card3Title:   "صبر وثبات",
 
     // Lang toggle
-    langFlag:       "🇹🇷",
-    langLabel:      "Türkçe",
+    langFlag:     "🇹🇷",
+    langLabel:    "Türkçe",
   },
 
   tr: {
@@ -64,30 +85,48 @@ export const translations = {
     pointsError:       "Puan güncellenemedi. Yönetici olarak giriş yaptığınızdan emin olun.",
 
     // Header
-    studentsNav:    "Öğrenciler ve Sıralama",
+    studentsNav:    "Öğrenciler",
     adminNav:       "Yönetim Paneli",
     loginNav:       "Yönetici Girişi",
 
+    // students/page.tsx
+    studentsTitle:       "Öğrenciler",
+    studentsDescAdmin:   "Yeni öğrenci ekleyebilir, isim ve fotoğraflarını düzenleyebilir veya silebilirsiniz.",
+    studentsDescViewer:  "Halka öğrencilerinin güncel listesi.",
+    pointsSystemTitle:   "📋 Puan Sistemi",
+    pointsSystemNote:    "Puanlar teşvik amaçlıdır; Kur'an sevgisini, güzel ahlakı ve halka adabını pekiştirmeyi hedefler. Öğrenciler arasında üstünlük ölçütü değildir.",
+    pointsItem1:  "Hıfz ve Tekrar",
+    pointsItem2:  "Seslendirme Kalitesi",
+    pointsItem3:  "Düzenli Katılım",
+    pointsItem4:  "İyi İşbirliği",
+    pointsItem5:  "Edep ve Güzel Ahlak",
+    pointsItem6:  "Katılım ve Çaba",
+    pointsItem7:  "Halka Adabına Saygı",
+
+    // page.tsx (الرئيسية)
+    heroDesc:     "Çocuklarımızın Kur'an hıfzını adım adım takip ettiğimiz mübarek bir halka; ezberledikleri her ayeti ve gösterdikleri her çabayı değerlendirerek onları hayırda yarışmaya teşvik ediyoruz.",
+    heroBtn:      "Öğrencileri ve Sıralamayı Görüntüle",
+    card1Title:   "Kur'an Hıfzının Fazileti",
+    card2Title:   "Hayırda Yarışmak",
+    card3Title:   "Sabır ve Sebat",
+
     // Lang toggle
-    langFlag:       "🇸🇦",
-    langLabel:      "العربية",
+    langFlag:     "🇸🇦",
+    langLabel:    "العربية",
   },
 } as const;
 
 export type TranslationKey = keyof typeof translations.ar;
 
-/** الدالة الرئيسية — تُستدعى مرة واحدة في كل مكوّن */
 export function getTranslations(locale: Locale) {
   return translations[locale];
 }
 
-/** قراءة اللغة المحفوظة من localStorage (أو العربية افتراضياً) */
 export function getSavedLocale(): Locale {
   if (typeof window === "undefined") return "ar";
   return (localStorage.getItem("manarah-locale") as Locale) ?? "ar";
 }
 
-/** حفظ اللغة في localStorage */
 export function saveLocale(locale: Locale): void {
   localStorage.setItem("manarah-locale", locale);
 }
