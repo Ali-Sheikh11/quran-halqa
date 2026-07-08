@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminEmail } from "@/lib/auth/admin";
 import LogoutButton from "./LogoutButton";
+import LangToggle from "./LangToggle";
 
 export default async function Header() {
   const supabase = createClient();
@@ -54,6 +55,8 @@ export default async function Header() {
               تسجيل دخول المسؤول
             </Link>
           )}
+
+          <LangToggle />
         </nav>
       </div>
     </header>
