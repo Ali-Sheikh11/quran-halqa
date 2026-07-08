@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Student } from "@/types/database.types";
 import StudentAvatar from "./StudentAvatar";
 import ProgressBar from "./ProgressBar";
+import { getSavedLocale, getTranslations } from "@/lib/i18n";
 
 const RANK_BADGES: Record<number, string> = {
   1: "🥇",
@@ -38,6 +39,7 @@ export default function StudentCard({
 }) {
   const [celebrate, setCelebrate] = useState(false);
   const prevPoints = useRef(student.points);
+  const t = getTranslations(getSavedLocale());
 
   // تأثير تحفيزي بسيط جدًا عند الوصول إلى محطة (50، 100، 150 ...)
   useEffect(() => {
@@ -121,7 +123,7 @@ export default function StudentCard({
       </h3>
 
       <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold-light/30 px-3 py-1 text-xs font-semibold text-gold-deep">
-        {student.points} نقطة
+        {student.points} {t.points}
       </span>
 
       <div className="mt-4 w-full">
