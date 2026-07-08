@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import IslamicPattern from "@/components/IslamicPattern";
 import VerseOfTheDay from "@/components/VerseOfTheDay";
+import { getSavedLocale, getTranslations } from "@/lib/i18n";
 
 export default function HomePage({
   searchParams,
@@ -7,10 +11,10 @@ export default function HomePage({
   searchParams: { unauthorized?: string };
 }) {
   const showUnauthorized = searchParams?.unauthorized === "1";
+  const t = getTranslations(getSavedLocale());
 
   return (
     <div>
-      {/* قسم البطل (Hero) */}
       <section className="relative overflow-hidden bg-gradient-to-b from-emerald-800 via-emerald-700 to-emerald-600 pb-28 pt-16 sm:pt-20">
         <IslamicPattern />
         <div className="relative mx-auto max-w-4xl px-5">
@@ -19,7 +23,6 @@ export default function HomePage({
               هذه الصفحة مخصّصة للمسؤول فقط. تم تحويلك إلى الصفحة الرئيسية.
             </div>
           )}
-
           <div className="text-center">
             <p className="mb-3 text-sm font-medium tracking-wide text-gold-light">
               بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
@@ -28,43 +31,38 @@ export default function HomePage({
               منارة القرآن
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-sand/85 sm:text-lg">
-              حلقة قرآنية مباركة نتابع فيها حفظ أبنائنا خطوة بخطوة،
-              ونحتسب كل آية يحفظونها وكل جهد يبذلونه، تشجيعًا لهم على
-              التنافس في الخير والثبات على كتاب الله.
+              {t.heroDesc}
             </p>
           </div>
-
           <div className="mt-8 flex justify-center">
             <a
               href="/students"
               className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-bold text-night transition hover:bg-gold-light"
             >
-              تابع الطلاب وترتيبهم
+              {t.heroBtn}
             </a>
           </div>
-
           <div className="mt-12">
             <VerseOfTheDay />
           </div>
         </div>
       </section>
 
-      {/* بطاقات تعريفية بأساس المنصة */}
       <section className="mx-auto max-w-6xl px-5 py-16">
         <div className="grid gap-6 sm:grid-cols-3">
           <FeatureCard
-            title="فضل حفظ القرآن"
-            description="«خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ» — كل آية تُحفظ هي زاد للدنيا ونور يوم القيامة، وكل جلسة في الحلقة خطوة في هذا الطريق المبارك."
+            title={t.card1Title}
+            description="«خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ» — كل آية تُحفظ هي زاد للدنيا ونور يوم القيامة."
             imageUrl="https://i.suar.me/Mgro3/l"
           />
           <FeatureCard
-            title="التنافس في الخير"
-            description="﴿وَفِي ذَٰلِكَ فَلْيَتَنَافَسِ الْمُتَنَافِسُونَ﴾ — نُذكّر طلابنا دومًا أن التنافس هنا تنافسٌ محبّب، غايته التقرّب إلى الله بحفظ كتابه."
+            title={t.card2Title}
+            description="﴿وَفِي ذَٰلِكَ فَلْيَتَنَافَسِ الْمُتَنَافِسُونَ﴾ — التنافس هنا غايته التقرّب إلى الله بحفظ كتابه."
             imageUrl="https://i.dzs.cloud/www.echoroukonline.com/wp-content/uploads/2021/03/%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86-2-1.jpg"
           />
           <FeatureCard
-            title="صبر وثبات"
-            description="حفظ القرآن رحلة صبر وتكرار، والثبات عليها بركة. نسأل الله أن يُعين كل طالب على إتمامها وأن يجعلها في موازين حسناتهم."
+            title={t.card3Title}
+            description="حفظ القرآن رحلة صبر وتكرار، والثبات عليها بركة."
             imageUrl="https://pbs.twimg.com/media/Cm3WCnnWAAAbQ2Y.jpg"
           />
         </div>
@@ -86,11 +84,11 @@ function FeatureCard({
     <div className="flex flex-col overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-ornate">
       {imageUrl && (
         <div className="h-40 w-full overflow-hidden bg-emerald-50">
-          <img 
-            src={imageUrl} 
-            alt={title} 
+          <img
+            src={imageUrl}
+            alt={title}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105" 
+            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
           />
         </div>
       )}
