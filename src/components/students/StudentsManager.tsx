@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Student } from "@/types/database.types";
 import { deleteStudentPhoto, uploadStudentPhoto } from "@/lib/students/storage";
+import { getSavedLocale, getTranslations } from "@/lib/i18n";
 import StudentCard from "./StudentCard";
 import StudentFormModal, { type StudentFormSubmitData } from "./StudentFormModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
@@ -24,6 +25,7 @@ export default function StudentsManager({
 }) {
   const isAdmin = role === "admin";
   const [supabase] = useState(() => createClient());
+  const t = getTranslations(getSavedLocale());
 
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,8 +37,6 @@ export default function StudentsManager({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [pendingPointsId, setPendingPointsId] = useState<string | null>(null);
 
-  // Supabase هو المصدر الوحيد للحقيقة: نشترك في تغييرات الجدول مباشرة
-  // فتنعكس أي إضافة/تعديل/حذف على كل من يشاهد الصفحة فورًا بدون reload.
   useEffect(() => {
     const channel = supabase
       .channel("students-realtime")
@@ -69,7 +69,6 @@ export default function StudentsManager({
     };
   }, [supabase]);
 
-  // الترتيب التلقائي: تنازليًا حسب النقاط، وعند التساوي يُقدَّم الأقدم انضمامًا
   const sortedStudents = useMemo(() => {
     return [...students].sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
@@ -142,7 +141,6 @@ export default function StudentsManager({
     setPendingPointsId(student.id);
     const previousPoints = student.points;
 
-    // تحديث متفائل فوري بدون انتظار الشبكة، Supabase يبقى مصدر الحقيقة
     setStudents((prev) =>
       prev.map((s) => (s.id === student.id ? { ...s, points: newPoints } : s))
     );
@@ -153,7 +151,6 @@ export default function StudentsManager({
       .eq("id", student.id);
 
     if (error) {
-      // فشل التحديث: نعيد القيمة السابقة
       setStudents((prev) =>
         prev.map((s) => (s.id === student.id ? { ...s, points: previousPoints } : s))
       );
@@ -172,7 +169,6 @@ export default function StudentsManager({
       if (error) throw error;
       setDeleteTarget(null);
     } catch {
-      // نُبقي مربع التأكيد مفتوحًا مع رسالة الخطأ ليحاول المستخدم مجددًا
       setDeleteError("تعذّر حذف الطالب. الرجاء المحاولة مرة أخرى.");
     } finally {
       setDeleteSubmitting(false);
@@ -181,12 +177,10 @@ export default function StudentsManager({
 
   return (
     <div>
-      {/* إحصائيات عامة */}
       <div className="mb-6">
         <StatsBar students={students} />
       </div>
 
-      {/* قاعة الشرف: أفضل 3 طلاب */}
       <div className="mb-8">
         <HallOfFame students={students} />
       </div>
@@ -206,7 +200,7 @@ export default function StudentsManager({
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="ابحث باسم الطالب..."
+            placeholder={t.searchPlaceholder}
             className="w-full rounded-xl border border-emerald-100 bg-white py-2.5 pr-10 pl-4 text-sm text-night outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
         </div>
@@ -223,15 +217,16 @@ export default function StudentsManager({
             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
               <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            إضافة طالب
+            {t.addStudent}
           </button>
         )}
       </div>
 
       {/* عدّاد بسيط */}
       <p className="mb-4 text-sm text-night/50">
-        {filteredStudents.length} {filteredStudents.length === 1 ? "طالب" : "طالبًا"}
-        {searchTerm && ` من أصل ${students.length}`}
+        {filteredStudents.length}{" "}
+        {filteredStudents.length === 1 ? t.studentCount : t.studentCountPlural}
+        {searchTerm && ` ${t.outOf} ${students.length}`}
       </p>
 
       {/* شبكة بطاقات الطلاب */}
@@ -240,9 +235,9 @@ export default function StudentsManager({
           <p className="text-sm text-night/50">
             {students.length === 0
               ? isAdmin
-                ? "لا يوجد طلاب بعد. اضغط على «إضافة طالب» للبدء."
-                : "لا يوجد طلاب مسجَّلون بعد."
-              : "لا توجد نتائج مطابقة لبحثك."}
+                ? t.noStudentsAdmin
+                : t.noStudentsPublic
+              : t.noSearchResults}
           </p>
         </div>
       ) : (
@@ -295,4 +290,4 @@ export default function StudentsManager({
       )}
     </div>
   );
-}
+        }
