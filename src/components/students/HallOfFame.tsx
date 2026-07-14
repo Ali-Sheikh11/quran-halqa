@@ -8,51 +8,67 @@ const MEDALS = [
 ] as const;
 
 /**
- * قاعة الشرف: أفضل 3 طلاب حسب النقاط، بإبراز بصري ذهبي/فضي/برونزي.
+ * قاعة الشرف: أفضل الطلاب حسب النقاط مع دعم التعادل.
+ * عند التعادل يظهر جميع المتعادلين في نفس المرتبة.
  */
 export default function HallOfFame({ students }: { students: Student[] }) {
-  const top3 = [...students]
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 3)
-    .filter((s) => s.points > 0 || students.length <= 3);
+  const sorted = [...students]
+    .filter((s) => s.points > 0)
+    .sort((a, b) => b.points - a.points);
 
-  if (top3.length === 0) return null;
+  if (sorted.length === 0) return null;
 
-  // ترتيب العرض بصريًا: الثاني - الأول - الثالث (تمنّصة في المنتصف)
-  const order = top3.length === 3 ? [1, 0, 2] : top3.map((_, i) => i);
+  // نجمع الطلاب في مجموعات حسب النقاط
+  // مثال: [28,28,20,20,15] → [[28,28],[20,20],[15]]
+  const groups: Student[][] = [];
+  for (const student of sorted) {
+    const last = groups[groups.length - 1];
+    if (last && last[0].points === student.points) {
+      last.push(student);
+    } else {
+      groups.push([student]);
+    }
+  }
+
+  // نأخذ المجموعات الثلاث الأولى فقط (المركز 1، 2، 3)
+  const topGroups = groups.slice(0, 3);
 
   return (
     <div className="corner-ornament relative overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-b from-emerald-50 to-white px-5 py-7 shadow-sm">
       <h2 className="mb-6 text-center font-verse text-lg font-bold text-emerald-800 sm:text-xl">
         🏅 قاعة الشرف
       </h2>
-      <div className="flex flex-wrap items-end justify-center gap-5 sm:gap-8">
-        {order.map((idx) => {
-          const student = top3[idx];
-          if (!student) return null;
-          const medal = MEDALS[idx];
-          const isFirst = idx === 0;
+
+      <div className="flex flex-col gap-6">
+        {topGroups.map((group, groupIndex) => {
+          const medal = MEDALS[groupIndex];
+          const isFirst = groupIndex === 0;
+
           return (
-            <div
-              key={student.id}
-              className={`flex flex-col items-center ${isFirst ? "order-2 -translate-y-2" : idx === 1 ? "order-1" : "order-3"}`}
-            >
-              <span className="mb-2 text-2xl sm:text-3xl" aria-hidden="true">
-                {medal.icon}
-              </span>
-              <StudentAvatar
-                name={student.full_name}
-                photoUrl={student.photo_url}
-                size={isFirst ? "lg" : "md"}
-              />
-              <p className="mt-2 max-w-[7.5rem] truncate text-sm font-bold text-emerald-800">
-                {student.full_name}
-              </p>
-              <span
-                className={`mt-1 rounded-full px-3 py-0.5 text-xs font-bold ${medal.chip}`}
-              >
-                {student.points} نقطة
-              </span>
+            <div key={groupIndex}>
+              {/* شارة المرتبة */}
+              <div className="mb-3 flex items-center justify-center gap-2">
+                <span className="text-xl" aria-hidden="true">{medal.icon}</span>
+                <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${medal.chip}`}>
+                  {medal.label} — {group[0].points} نقطة
+                </span>
+              </div>
+
+              {/* الطلاب في هذه المرتبة */}
+              <div className="flex flex-wrap items-end justify-center gap-4 sm:gap-6">
+                {group.map((student) => (
+                  <div key={student.id} className="flex flex-col items-center">
+                    <StudentAvatar
+                      name={student.full_name}
+                      photoUrl={student.photo_url}
+                      size={isFirst ? "lg" : "md"}
+                    />
+                    <p className="mt-2 max-w-[7.5rem] truncate text-sm font-bold text-emerald-800">
+                      {student.full_name}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })}
