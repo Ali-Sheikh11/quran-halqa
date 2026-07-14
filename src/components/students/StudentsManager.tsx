@@ -76,11 +76,21 @@ export default function StudentsManager({
     });
   }, [students]);
 
-  const rankMap = useMemo(() => {
-    const map = new Map<string, number>();
-    sortedStudents.forEach((s, i) => map.set(s.id, i + 1));
-    return map;
-  }, [sortedStudents]);
+const rankMap = useMemo(() => {
+  const map = new Map<string, number>();
+  let currentRank = 0;
+  let lastPoints: number | null = null;
+
+  sortedStudents.forEach((s, i) => {
+    if (lastPoints === null || s.points !== lastPoints) {
+      currentRank = i + 1;
+      lastPoints = s.points;
+    }
+    map.set(s.id, currentRank);
+  });
+
+  return map;
+}, [sortedStudents]);
 
   const filteredStudents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
