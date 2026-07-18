@@ -18,6 +18,20 @@ const RANK_RING: Record<number, string> = {
   3: "ring-2 ring-amber-700/40",
 };
 
+/** هل استهلك الطالب حق مراجعة جزء عم هذا الأسبوع؟ */
+function isJuzAmmaUsedThisWeek(last: string | null): boolean {
+  if (!last) return false;
+  const lastDate = new Date(last);
+  const now = new Date();
+
+  // نحسب بداية الأسبوع الحالي (الأحد)
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  return lastDate >= startOfWeek;
+}
+
 export default function StudentCard({
   student,
   rank,
@@ -26,6 +40,7 @@ export default function StudentCard({
   onDelete,
   onAddPoint,
   onSubtractPoint,
+  onAddJuzAmmaPoint,
   pointsPending,
 }: {
   student: Student;
@@ -35,25 +50,27 @@ export default function StudentCard({
   onDelete: () => void;
   onAddPoint: () => void;
   onSubtractPoint: () => void;
+  onAddJuzAmmaPoint: () => void;
   pointsPending?: boolean;
 }) {
   const [celebrate, setCelebrate] = useState(false);
   const prevPoints = useRef(student.points);
   const t = getTranslations(getSavedLocale());
 
-  // تأثير تحفيزي بسيط جدًا عند الوصول إلى محطة (50، 100، 150 ...)
   useEffect(() => {
     const prev = prevPoints.current;
     if (student.points > prev && student.points % 50 === 0 && student.points !== 0) {
       setCelebrate(true);
-      const t = setTimeout(() => setCelebrate(false), 1100);
+      const timer = setTimeout(() => setCelebrate(false), 1100);
       prevPoints.current = student.points;
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     }
     prevPoints.current = student.points;
   }, [student.points]);
 
   const ring = rank <= 3 ? RANK_RING[rank] : "";
+  const juzAmmaUsed = isJuzAmmaUsedThisWeek(student.last_juz_amma_review);
+  const juzAmmaStatus = juzAmmaUsed ? "0/1" : "1/1";
 
   return (
     <div
@@ -131,28 +148,55 @@ export default function StudentCard({
       </div>
 
       {isAdmin && (
-        <div className="mt-4 flex w-full items-center justify-center gap-2">
+        <div className="mt-4 flex w-full flex-col items-center gap-2">
+          {/* أزرار النقاط العادية */}
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={onSubtractPoint}
+              disabled={pointsPending || student.points <= 0}
+              aria-label={`إنقاص نقطة من ${student.full_name}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={onAddPoint}
+              disabled={pointsPending}
+              aria-label={`إضافة نقطة لـ ${student.full_name}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          {/* زر جزء عم */}
           <button
             type="button"
-            onClick={onSubtractPoint}
-            disabled={pointsPending || student.points <= 0}
-            aria-label={`إنقاص نقطة من ${student.full_name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={onAddJuzAmmaPoint}
+            disabled={pointsPending || juzAmmaUsed}
+            aria-label={`إضافة نقطة مراجعة جزء عم لـ ${student.full_name}`}
+            className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              juzAmmaUsed
+                ? "border border-slate-200 bg-slate-50 text-slate-400"
+                : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            }`}
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-              <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={onAddPoint}
-            disabled={pointsPending}
-            aria-label={`إضافة نقطة لـ ${student.full_name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            <span>📖 جزء عم</span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                juzAmmaUsed
+                  ? "bg-slate-200 text-slate-500"
+                  : "bg-emerald-200 text-emerald-800"
+              }`}
+            >
+              {juzAmmaStatus}
+            </span>
           </button>
         </div>
       )}
