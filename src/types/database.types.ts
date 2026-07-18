@@ -13,6 +13,8 @@ export type Student = {
   photo_url: string | null;
   /** نقاط الطالب — يُعدَّل عبر أزرار (+/-) الخاصة بالمسؤول فقط، ولا يقل عن 0 */
   points: number;
+  /** تاريخ آخر مراجعة لجزء عم — يتجدد الحق كل أسبوع (الأحد) */
+  last_juz_amma_review: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
