@@ -1,205 +1,304 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { Student } from "@/types/database.types";
-import StudentAvatar from "./StudentAvatar";
-import ProgressBar from "./ProgressBar";
+import { deleteStudentPhoto, uploadStudentPhoto } from "@/lib/students/storage";
 import { getSavedLocale, getTranslations } from "@/lib/i18n";
+import StudentCard from "./StudentCard";
+import StudentFormModal, { type StudentFormSubmitData } from "./StudentFormModal";
+import DeleteConfirmModal from "./DeleteConfirmModal";
+import StatsBar from "./StatsBar";
+import HallOfFame from "./HallOfFame";
 
-const RANK_BADGES: Record<number, string> = {
-  1: "🥇",
-  2: "🥈",
-  3: "🥉",
-};
+type FormModalState =
+  | { mode: "add" }
+  | { mode: "edit"; student: Student }
+  | null;
 
-const RANK_RING: Record<number, string> = {
-  1: "ring-2 ring-gold/60",
-  2: "ring-2 ring-slate-300/70",
-  3: "ring-2 ring-amber-700/40",
-};
-
-/** هل استهلك الطالب حق مراجعة جزء عم هذا الأسبوع؟ */
-function isJuzAmmaUsedThisWeek(last: string | null): boolean {
-  if (!last) return false;
-  const lastDate = new Date(last);
-  const now = new Date();
-
-  // نحسب بداية الأسبوع الحالي (الأحد)
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-
-  return lastDate >= startOfWeek;
-}
-
-export default function StudentCard({
-  student,
-  rank,
-  isAdmin,
-  onEdit,
-  onDelete,
-  onAddPoint,
-  onSubtractPoint,
-  onAddJuzAmmaPoint,
-  pointsPending,
+export default function StudentsManager({
+  initialStudents,
+  role,
 }: {
-  student: Student;
-  rank: number;
-  isAdmin: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  onAddPoint: () => void;
-  onSubtractPoint: () => void;
-  onAddJuzAmmaPoint: () => void;
-  pointsPending?: boolean;
+  initialStudents: Student[];
+  role: "admin" | "viewer";
 }) {
-  const [celebrate, setCelebrate] = useState(false);
-  const prevPoints = useRef(student.points);
+  const isAdmin = role === "admin";
+  const [supabase] = useState(() => createClient());
   const t = getTranslations(getSavedLocale());
 
-  useEffect(() => {
-    const prev = prevPoints.current;
-    if (student.points > prev && student.points % 50 === 0 && student.points !== 0) {
-      setCelebrate(true);
-      const timer = setTimeout(() => setCelebrate(false), 1100);
-      prevPoints.current = student.points;
-      return () => clearTimeout(timer);
-    }
-    prevPoints.current = student.points;
-  }, [student.points]);
+  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [formModal, setFormModal] = useState<FormModalState>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [pendingPointsId, setPendingPointsId] = useState<string | null>(null);
 
-  const ring = rank <= 3 ? RANK_RING[rank] : "";
-  const juzAmmaUsed = isJuzAmmaUsedThisWeek(student.last_juz_amma_review);
-  const juzAmmaStatus = juzAmmaUsed ? "0/1" : "1/1";
+  useEffect(() => {
+    const channel = supabase
+      .channel("students-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "students" },
+        (payload) => {
+          setStudents((prev) => {
+            if (payload.eventType === "INSERT") {
+              const incoming = payload.new as Student;
+              if (prev.some((s) => s.id === incoming.id)) return prev;
+              return [incoming, ...prev];
+            }
+            if (payload.eventType === "UPDATE") {
+              const updated = payload.new as Student;
+              return prev.map((s) => (s.id === updated.id ? updated : s));
+            }
+            if (payload.eventType === "DELETE") {
+              const removedId = (payload.old as Partial<Student>).id;
+              return prev.filter((s) => s.id !== removedId);
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase]);
+
+  const sortedStudents = useMemo(() => {
+    return [...students].sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return a.created_at.localeCompare(b.created_at);
+    });
+  }, [students]);
+
+
+const rankMap = useMemo(() => {
+  const map = new Map<string, number>();
+  let currentRank = 0;
+  let lastPoints: number | null = null;
+
+  sortedStudents.forEach((s, i) => {
+    if (lastPoints === null || s.points !== lastPoints) {
+      currentRank = i + 1;
+      lastPoints = s.points;
+    }
+    map.set(s.id, currentRank);
+  });
+
+  return map;
+}, [sortedStudents]);
+
+  const filteredStudents = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return sortedStudents;
+    return sortedStudents.filter((s) => s.full_name.toLowerCase().includes(term));
+  }, [sortedStudents, searchTerm]);
+
+  async function handleFormSubmit(data: StudentFormSubmitData) {
+    setFormSubmitting(true);
+    setFormError(null);
+
+    try {
+      if (formModal?.mode === "add") {
+        const id = crypto.randomUUID();
+        let photoUrl: string | null = null;
+
+        if (data.file) {
+          photoUrl = await uploadStudentPhoto(supabase, id, data.file);
+        }
+
+        const { data: userData } = await supabase.auth.getUser();
+        const { error } = await supabase.from("students").insert({
+          id,
+          full_name: data.name,
+          photo_url: photoUrl,
+          created_by: userData.user?.id ?? null,
+        });
+
+        if (error) throw new Error(`تعذّرت إضافة الطالب: ${error.message}`);
+      } else if (formModal?.mode === "edit") {
+        const studentId = formModal.student.id;
+        let photoUrl = formModal.student.photo_url;
+
+        if (data.file) {
+          photoUrl = await uploadStudentPhoto(supabase, studentId, data.file);
+        }
+
+        const { error } = await supabase
+          .from("students")
+          .update({ full_name: data.name, photo_url: photoUrl })
+          .eq("id", studentId);
+
+        if (error) throw new Error(`تعذّر حفظ التعديلات: ${error.message}`);
+      }
+
+      setFormModal(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "حدث خطأ غير متوقع.");
+    } finally {
+      setFormSubmitting(false);
+    }
+  }
+
+  async function handlePointChange(student: Student, delta: number) {
+    const newPoints = Math.max(0, student.points + delta);
+    if (newPoints === student.points) return;
+
+    setPendingPointsId(student.id);
+    const previousPoints = student.points;
+
+    setStudents((prev) =>
+      prev.map((s) => (s.id === student.id ? { ...s, points: newPoints } : s))
+    );
+
+    const { error } = await supabase
+      .from("students")
+      .update({ points: newPoints })
+      .eq("id", student.id);
+
+    if (error) {
+      setStudents((prev) =>
+        prev.map((s) => (s.id === student.id ? { ...s, points: previousPoints } : s))
+      );
+    }
+    setPendingPointsId(null);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    setDeleteSubmitting(true);
+    setDeleteError(null);
+
+    try {
+      await deleteStudentPhoto(supabase, deleteTarget.id);
+      const { error } = await supabase.from("students").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      setDeleteTarget(null);
+    } catch {
+      setDeleteError("تعذّر حذف الطالب. الرجاء المحاولة مرة أخرى.");
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }
 
   return (
-    <div
-      className={`group relative flex flex-col items-center rounded-2xl border border-emerald-100 bg-white px-5 py-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-ornate ${ring} ${
-        celebrate ? "animate-[pulse_0.55s_ease-in-out_2]" : ""
-      }`}
-    >
-      {rank <= 3 && (
-        <span
-          className="absolute -top-3 right-1/2 translate-x-1/2 text-xl drop-shadow-sm"
-          aria-hidden="true"
-        >
-          {RANK_BADGES[rank]}
-        </span>
-      )}
-
-      {celebrate && (
-        <span
-          className="pointer-events-none absolute -top-4 text-lg animate-bounce"
-          aria-hidden="true"
-        >
-          ✨
-        </span>
-      )}
-
-      {isAdmin && (
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
-          <button
-            type="button"
-            onClick={onEdit}
-            aria-label={`تعديل اسم ${student.full_name}`}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-100 bg-sand-50 text-emerald-700 transition hover:bg-emerald-50"
-          >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
-              <path
-                d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={`حذف ${student.full_name}`}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-red-100 bg-sand-50 text-red-600 transition hover:bg-red-50"
-          >
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
-              <path
-                d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      <StudentAvatar name={student.full_name} photoUrl={student.photo_url} size="lg" />
-
-      <h3 className="mt-4 line-clamp-2 text-base font-bold text-emerald-800">
-        {student.full_name}
-      </h3>
-
-      <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold-light/30 px-3 py-1 text-xs font-semibold text-gold-deep">
-        {student.points} {t.points}
-      </span>
-
-      <div className="mt-4 w-full">
-        <ProgressBar points={student.points} size="sm" />
+    <div>
+      <div className="mb-6">
+        <StatsBar students={students} />
       </div>
 
-      {isAdmin && (
-        <div className="mt-4 flex w-full flex-col items-center gap-2">
-          {/* أزرار النقاط العادية */}
-          <div className="flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={onSubtractPoint}
-              disabled={pointsPending || student.points <= 0}
-              aria-label={`إنقاص نقطة من ${student.full_name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={onAddPoint}
-              disabled={pointsPending}
-              aria-label={`إضافة نقطة لـ ${student.full_name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
+      <div className="mb-8">
+        <HallOfFame students={students} />
+      </div>
 
-          {/* زر جزء عم */}
+      {/* شريط الأدوات: البحث + زر الإضافة */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <svg
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-night/40"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={t.searchPlaceholder}
+            className="w-full rounded-xl border border-emerald-100 bg-white py-2.5 pr-10 pl-4 text-sm text-night outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          />
+        </div>
+
+        {isAdmin && (
           <button
             type="button"
-            onClick={onAddJuzAmmaPoint}
-            disabled={pointsPending || juzAmmaUsed}
-            aria-label={`إضافة نقطة مراجعة جزء عم لـ ${student.full_name}`}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${
-              juzAmmaUsed
-                ? "border border-slate-200 bg-slate-50 text-slate-400"
-                : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-            }`}
+            onClick={() => {
+              setFormError(null);
+              setFormModal({ mode: "add" });
+            }}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
           >
-            <span>📖 جزء عم</span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                juzAmmaUsed
-                  ? "bg-slate-200 text-slate-500"
-                  : "bg-emerald-200 text-emerald-800"
-              }`}
-            >
-              {juzAmmaStatus}
-            </span>
+            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            {t.addStudent}
           </button>
+        )}
+      </div>
+
+      {/* عدّاد بسيط */}
+      <p className="mb-4 text-sm text-night/50">
+        {filteredStudents.length}{" "}
+        {filteredStudents.length === 1 ? t.studentCount : t.studentCountPlural}
+        {searchTerm && ` ${t.outOf} ${students.length}`}
+      </p>
+
+      {/* شبكة بطاقات الطلاب */}
+      {filteredStudents.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-emerald-200 bg-white px-6 py-14 text-center">
+          <p className="text-sm text-night/50">
+            {students.length === 0
+              ? isAdmin
+                ? t.noStudentsAdmin
+                : t.noStudentsPublic
+              : t.noSearchResults}
+          </p>
         </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {filteredStudents.map((student) => (
+            <StudentCard
+              key={student.id}
+              student={student}
+              rank={rankMap.get(student.id) ?? 0}
+              isAdmin={isAdmin}
+              pointsPending={pendingPointsId === student.id}
+              onAddPoint={() => handlePointChange(student, 1)}
+              onSubtractPoint={() => handlePointChange(student, -1)}
+              onEdit={() => {
+                setFormError(null);
+                setFormModal({ mode: "edit", student });
+              }}
+              onDelete={() => {
+                setDeleteError(null);
+                setDeleteTarget(student);
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {formModal && (
+        <StudentFormModal
+          mode={formModal.mode}
+          initialStudent={formModal.mode === "edit" ? formModal.student : undefined}
+          submitting={formSubmitting}
+          errorMessage={formError}
+          onSubmit={handleFormSubmit}
+          onClose={() => {
+            if (!formSubmitting) setFormModal(null);
+          }}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteConfirmModal
+          studentName={deleteTarget.full_name}
+          submitting={deleteSubmitting}
+          errorMessage={deleteError}
+          onConfirm={handleDeleteConfirm}
+          onClose={() => {
+            if (!deleteSubmitting) setDeleteTarget(null);
+          }}
+        />
       )}
     </div>
   );
-}
+        }
