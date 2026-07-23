@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   title: "منارة القرآن | منصة إدارة الحلقة القرآنية",
   description:
     "منصّة إدارة نقاط طلاب الحلقة القرآنية، بهوية إسلامية هادئة وتجربة آمنة للمسؤولين والزوّار.",
+    verification: {
+    google: "51mpGIYzosy3mriMKgTRrRUQiD1yoF_-9nqknaFE3Mc",
+  },
 };
 
 export default function RootLayout({
