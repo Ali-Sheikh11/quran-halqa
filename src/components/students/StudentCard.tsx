@@ -26,6 +26,7 @@ export default function StudentCard({
   onDelete,
   onAddPoint,
   onSubtractPoint,
+  onViewTracking,
   pointsPending,
 }: {
   student: Student;
@@ -35,20 +36,20 @@ export default function StudentCard({
   onDelete: () => void;
   onAddPoint: () => void;
   onSubtractPoint: () => void;
+  onViewTracking: () => void;
   pointsPending?: boolean;
 }) {
   const [celebrate, setCelebrate] = useState(false);
   const prevPoints = useRef(student.points);
   const t = getTranslations(getSavedLocale());
 
-  // تأثير تحفيزي بسيط جدًا عند الوصول إلى محطة (50، 100، 150 ...)
   useEffect(() => {
     const prev = prevPoints.current;
     if (student.points > prev && student.points % 50 === 0 && student.points !== 0) {
       setCelebrate(true);
-      const t = setTimeout(() => setCelebrate(false), 1100);
+      const timer = setTimeout(() => setCelebrate(false), 1100);
       prevPoints.current = student.points;
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     }
     prevPoints.current = student.points;
   }, [student.points]);
@@ -131,30 +132,61 @@ export default function StudentCard({
       </div>
 
       {isAdmin && (
-        <div className="mt-4 flex w-full items-center justify-center gap-2">
+        <div className="mt-4 flex w-full flex-col items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={onSubtractPoint}
+              disabled={pointsPending || student.points <= 0}
+              aria-label={`إنقاص نقطة من ${student.full_name}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={onAddPoint}
+              disabled={pointsPending}
+              aria-label={`إضافة نقطة لـ ${student.full_name}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          {/* زر متابعة الحفظ */}
           <button
             type="button"
-            onClick={onSubtractPoint}
-            disabled={pointsPending || student.points <= 0}
-            aria-label={`إنقاص نقطة من ${student.full_name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={onViewTracking}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-              <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
+              <path
+                d="M12 6.5A5.5 5.5 0 1 1 6.5 12 5.5 5.5 0 0 1 12 6.5M12 2v2M12 20v2M2 12h2M20 12h2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
             </svg>
-          </button>
-          <button
-            type="button"
-            onClick={onAddPoint}
-            disabled={pointsPending}
-            aria-label={`إضافة نقطة لـ ${student.full_name}`}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            متابعة الحفظ
           </button>
         </div>
+      )}
+
+      {/* زر متابعة الحفظ للزوار أيضاً */}
+      {!isAdmin && (
+        <button
+          type="button"
+          onClick={onViewTracking}
+          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-1.5 text-xs font-medium text-emerald-600 transition hover:bg-emerald-50"
+        >
+          متابعة الحفظ
+        </button>
       )}
     </div>
   );
