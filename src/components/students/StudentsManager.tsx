@@ -10,6 +10,9 @@ import StudentFormModal, { type StudentFormSubmitData } from "./StudentFormModal
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import StatsBar from "./StatsBar";
 import HallOfFame from "./HallOfFame";
+import MemorizationModal from "./MemorizationModal";
+
+
 
 type FormModalState =
   | { mode: "add" }
@@ -35,6 +38,7 @@ export default function StudentsManager({
   const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [trackingStudent, setTrackingStudent] = useState<Student | null>(null);
   const [pendingPointsId, setPendingPointsId] = useState<string | null>(null);
 
   useEffect(() => {
