@@ -12,8 +12,6 @@ import StatsBar from "./StatsBar";
 import HallOfFame from "./HallOfFame";
 import MemorizationModal from "./MemorizationModal";
 
-
-
 type FormModalState =
   | { mode: "add" }
   | { mode: "edit"; student: Student }
@@ -80,21 +78,21 @@ export default function StudentsManager({
     });
   }, [students]);
 
-const rankMap = useMemo(() => {
-  const map = new Map<string, number>();
-  let currentRank = 0;
-  let lastPoints: number | null = null;
+  const rankMap = useMemo(() => {
+    const map = new Map<string, number>();
+    let currentRank = 0;
+    let lastPoints: number | null = null;
 
-  sortedStudents.forEach((s, i) => {
-    if (lastPoints === null || s.points !== lastPoints) {
-      currentRank = i + 1;
-      lastPoints = s.points;
-    }
-    map.set(s.id, currentRank);
-  });
+    sortedStudents.forEach((s, i) => {
+      if (lastPoints === null || s.points !== lastPoints) {
+        currentRank = i + 1;
+        lastPoints = s.points;
+      }
+      map.set(s.id, currentRank);
+    });
 
-  return map;
-}, [sortedStudents]);
+    return map;
+  }, [sortedStudents]);
 
   const filteredStudents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -199,7 +197,6 @@ const rankMap = useMemo(() => {
         <HallOfFame students={students} />
       </div>
 
-      {/* شريط الأدوات: البحث + زر الإضافة */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
           <svg
@@ -236,14 +233,12 @@ const rankMap = useMemo(() => {
         )}
       </div>
 
-      {/* عدّاد بسيط */}
       <p className="mb-4 text-sm text-night/50">
         {filteredStudents.length}{" "}
         {filteredStudents.length === 1 ? t.studentCount : t.studentCountPlural}
         {searchTerm && ` ${t.outOf} ${students.length}`}
       </p>
 
-      {/* شبكة بطاقات الطلاب */}
       {filteredStudents.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-emerald-200 bg-white px-6 py-14 text-center">
           <p className="text-sm text-night/50">
@@ -265,6 +260,7 @@ const rankMap = useMemo(() => {
               pointsPending={pendingPointsId === student.id}
               onAddPoint={() => handlePointChange(student, 1)}
               onSubtractPoint={() => handlePointChange(student, -1)}
+              onViewTracking={() => setTrackingStudent(student)}
               onEdit={() => {
                 setFormError(null);
                 setFormModal({ mode: "edit", student });
@@ -302,6 +298,14 @@ const rankMap = useMemo(() => {
           }}
         />
       )}
+
+      {trackingStudent && (
+        <MemorizationModal
+          student={trackingStudent}
+          isAdmin={isAdmin}
+          onClose={() => setTrackingStudent(null)}
+        />
+      )}
     </div>
   );
-        }
+}
