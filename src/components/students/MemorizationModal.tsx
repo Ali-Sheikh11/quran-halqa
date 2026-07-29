@@ -12,19 +12,25 @@ import type {
 
 const GRADES: LogGrade[] = ["ممتاز", "جيد جدًا", "جيد", "يحتاج إعادة"];
 const GRADE_COLORS: Record<LogGrade, string> = {
-  "ممتاز":        "bg-emerald-100 text-emerald-800",
-  "جيد جدًا":     "bg-blue-100 text-blue-800",
-  "جيد":          "bg-gold-light/40 text-gold-deep",
-  "يحتاج إعادة":  "bg-red-100 text-red-700",
+  "ممتاز":       "bg-emerald-100 text-emerald-800",
+  "جيد جدًا":    "bg-blue-100 text-blue-800",
+  "جيد":         "bg-gold-light/40 text-gold-deep",
+  "يحتاج إعادة": "bg-red-100 text-red-700",
 };
 
 const emptyTracking: Omit<MemorizationTracking, "id" | "student_id" | "updated_at"> = {
   memorization_start_page: null,
   memorization_end_page: null,
   last_memorized_page: null,
+  memorization_start_page_2: null,
+  memorization_end_page_2: null,
+  last_memorized_page_2: null,
   review_start_page: null,
   review_end_page: null,
   last_reviewed_page: null,
+  review_start_page_2: null,
+  review_end_page_2: null,
+  last_reviewed_page_2: null,
 };
 
 const emptyLog = {
@@ -54,6 +60,8 @@ export default function MemorizationModal({
   const [savingTracking, setSavingTracking] = useState(false);
   const [savingLog, setSavingLog] = useState(false);
   const [activeTab, setActiveTab] = useState<"summary" | "tracking" | "logs">("summary");
+  const [showRange2Mem, setShowRange2Mem] = useState(false);
+  const [showRange2Rev, setShowRange2Rev] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -81,10 +89,19 @@ export default function MemorizationModal({
         memorization_start_page: t.memorization_start_page,
         memorization_end_page: t.memorization_end_page,
         last_memorized_page: t.last_memorized_page,
+        memorization_start_page_2: t.memorization_start_page_2,
+        memorization_end_page_2: t.memorization_end_page_2,
+        last_memorized_page_2: t.last_memorized_page_2,
         review_start_page: t.review_start_page,
         review_end_page: t.review_end_page,
         last_reviewed_page: t.last_reviewed_page,
+        review_start_page_2: t.review_start_page_2,
+        review_end_page_2: t.review_end_page_2,
+        last_reviewed_page_2: t.last_reviewed_page_2,
       });
+      // إظهار النطاق الثاني تلقائياً إذا كان فيه بيانات
+      if (t.memorization_start_page_2) setShowRange2Mem(true);
+      if (t.review_start_page_2) setShowRange2Rev(true);
     }
     setLogs((l as MemorizationLog[]) ?? []);
     setLoading(false);
@@ -123,15 +140,21 @@ export default function MemorizationModal({
     setLogs((prev) => prev.filter((l) => l.id !== id));
   }
 
-  const nextMemorizationPage =
-    tracking?.last_memorized_page
-      ? tracking.last_memorized_page + 1
-      : tracking?.memorization_start_page ?? null;
+  const nextMemPage = tracking?.last_memorized_page
+    ? tracking.last_memorized_page + 1
+    : tracking?.memorization_start_page ?? null;
 
-  const nextReviewPage =
-    tracking?.last_reviewed_page
-      ? tracking.last_reviewed_page + 1
-      : tracking?.review_start_page ?? null;
+  const nextMemPage2 = tracking?.last_memorized_page_2
+    ? tracking.last_memorized_page_2 + 1
+    : tracking?.memorization_start_page_2 ?? null;
+
+  const nextRevPage = tracking?.last_reviewed_page
+    ? tracking.last_reviewed_page + 1
+    : tracking?.review_start_page ?? null;
+
+  const nextRevPage2 = tracking?.last_reviewed_page_2
+    ? tracking.last_reviewed_page_2 + 1
+    : tracking?.review_start_page_2 ?? null;
 
   return (
     <div
@@ -139,12 +162,11 @@ export default function MemorizationModal({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="relative w-full max-w-2xl rounded-2xl border border-emerald-100 bg-white shadow-ornate">
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-emerald-50 px-6 py-4">
           <div>
-            <h2 className="font-verse text-lg font-bold text-emerald-800">
-              متابعة الحفظ
-            </h2>
+            <h2 className="font-verse text-lg font-bold text-emerald-800">متابعة الحفظ</h2>
             <p className="text-sm text-night/60">{student.full_name}</p>
           </div>
           <button
@@ -183,60 +205,113 @@ export default function MemorizationModal({
             <>
               {/* Summary Tab */}
               {activeTab === "summary" && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <SummaryCard
-                      icon="📖"
-                      label="الحفظ الحالي"
-                      value={
-                        tracking?.memorization_start_page && tracking?.memorization_end_page
-                          ? `${tracking.memorization_start_page} ← ${tracking.memorization_end_page}`
-                          : "—"
-                      }
-                    />
-                    <SummaryCard
-                      icon="🔄"
-                      label="المراجعة الحالية"
-                      value={
-                        tracking?.review_start_page && tracking?.review_end_page
-                          ? `${tracking.review_start_page} ← ${tracking.review_end_page}`
-                          : "—"
-                      }
-                    />
-                    <SummaryCard
-                      icon="✅"
-                      label="آخر تسميع"
-                      value={
-                        tracking?.last_memorized_page
-                          ? `صفحة ${tracking.last_memorized_page}`
-                          : "—"
-                      }
-                    />
-                    <SummaryCard
-                      icon="🔁"
-                      label="آخر مراجعة"
-                      value={
-                        tracking?.last_reviewed_page
-                          ? `صفحة ${tracking.last_reviewed_page}`
-                          : "—"
-                      }
-                    />
-                    <SummaryCard
-                      icon="➡️"
-                      label="الصفحة التالية للحفظ"
-                      value={nextMemorizationPage ? `صفحة ${nextMemorizationPage}` : "—"}
-                    />
-                    <SummaryCard
-                      icon="↩️"
-                      label="الصفحة التالية للمراجعة"
-                      value={nextReviewPage ? `صفحة ${nextReviewPage}` : "—"}
-                    />
+                <div className="space-y-4">
+                  {/* الحفظ */}
+                  <div>
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-night/40">الحفظ</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <SummaryCard
+                        icon="📖"
+                        label="النطاق الأول"
+                        value={
+                          tracking?.memorization_start_page && tracking?.memorization_end_page
+                            ? `${tracking.memorization_start_page} ← ${tracking.memorization_end_page}`
+                            : "—"
+                        }
+                      />
+                      {(tracking?.memorization_start_page_2 || tracking?.memorization_end_page_2) && (
+                        <SummaryCard
+                          icon="📖"
+                          label="النطاق الثاني"
+                          value={
+                            tracking?.memorization_start_page_2 && tracking?.memorization_end_page_2
+                              ? `${tracking.memorization_start_page_2} ← ${tracking.memorization_end_page_2}`
+                              : "—"
+                          }
+                        />
+                      )}
+                      <SummaryCard
+                        icon="✅"
+                        label="آخر تسميع (1)"
+                        value={tracking?.last_memorized_page ? `صفحة ${tracking.last_memorized_page}` : "—"}
+                      />
+                      {tracking?.last_memorized_page_2 && (
+                        <SummaryCard
+                          icon="✅"
+                          label="آخر تسميع (2)"
+                          value={`صفحة ${tracking.last_memorized_page_2}`}
+                        />
+                      )}
+                      <SummaryCard
+                        icon="➡️"
+                        label="التالية للحفظ (1)"
+                        value={nextMemPage ? `صفحة ${nextMemPage}` : "—"}
+                      />
+                      {nextMemPage2 && (
+                        <SummaryCard
+                          icon="➡️"
+                          label="التالية للحفظ (2)"
+                          value={`صفحة ${nextMemPage2}`}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* المراجعة */}
+                  <div>
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-night/40">المراجعة</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <SummaryCard
+                        icon="🔄"
+                        label="النطاق الأول"
+                        value={
+                          tracking?.review_start_page && tracking?.review_end_page
+                            ? `${tracking.review_start_page} ← ${tracking.review_end_page}`
+                            : "—"
+                        }
+                      />
+                      {(tracking?.review_start_page_2 || tracking?.review_end_page_2) && (
+                        <SummaryCard
+                          icon="🔄"
+                          label="النطاق الثاني"
+                          value={
+                            tracking?.review_start_page_2 && tracking?.review_end_page_2
+                              ? `${tracking.review_start_page_2} ← ${tracking.review_end_page_2}`
+                              : "—"
+                          }
+                        />
+                      )}
+                      <SummaryCard
+                        icon="🔁"
+                        label="آخر مراجعة (1)"
+                        value={tracking?.last_reviewed_page ? `صفحة ${tracking.last_reviewed_page}` : "—"}
+                      />
+                      {tracking?.last_reviewed_page_2 && (
+                        <SummaryCard
+                          icon="🔁"
+                          label="آخر مراجعة (2)"
+                          value={`صفحة ${tracking.last_reviewed_page_2}`}
+                        />
+                      )}
+                      <SummaryCard
+                        icon="↩️"
+                        label="التالية للمراجعة (1)"
+                        value={nextRevPage ? `صفحة ${nextRevPage}` : "—"}
+                      />
+                      {nextRevPage2 && (
+                        <SummaryCard
+                          icon="↩️"
+                          label="التالية للمراجعة (2)"
+                          value={`صفحة ${nextRevPage2}`}
+                        />
+                      )}
+                    </div>
                   </div>
 
                   {/* آخر 3 سجلات */}
                   {logs.length > 0 && (
-                    <div className="mt-4">
-                      <h3 className="mb-2 text-sm font-bold text-night/70">آخر السجلات</h3>
+                    <div>
+                      <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-night/40">آخر السجلات</h3>
                       <div className="space-y-2">
                         {logs.slice(0, 3).map((log) => (
                           <LogRow key={log.id} log={log} />
@@ -249,92 +324,121 @@ export default function MemorizationModal({
 
               {/* Tracking Tab */}
               {activeTab === "tracking" && (
-                <div className="space-y-5">
-                  {/* الحفظ */}
+                <div className="space-y-6">
+
+                  {/* الحفظ — النطاق الأول */}
                   <div>
                     <h3 className="mb-3 font-verse text-base font-bold text-emerald-800">
-                      📖 الحفظ الحالي
+                      📖 الحفظ — النطاق الأول
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field
-                        label="بداية الحفظ (صفحة)"
-                        value={trackingForm.memorization_start_page ?? ""}
-                        disabled={!isAdmin}
-                        onChange={(v) =>
-                          setTrackingForm((p) => ({ ...p, memorization_start_page: +v || null }))
-                        }
-                      />
-                      <Field
-                        label="نهاية الحفظ (صفحة)"
-                        value={trackingForm.memorization_end_page ?? ""}
-                        disabled={!isAdmin}
-                        onChange={(v) =>
-                          setTrackingForm((p) => ({ ...p, memorization_end_page: +v || null }))
-                        }
-                      />
-                      <Field
-                        label="آخر صفحة سُمِّعت"
-                        value={trackingForm.last_memorized_page ?? ""}
-                        disabled={!isAdmin}
-                        onChange={(v) =>
-                          setTrackingForm((p) => ({ ...p, last_memorized_page: +v || null }))
-                        }
-                      />
+                      <Field label="بداية الحفظ (صفحة)" value={trackingForm.memorization_start_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, memorization_start_page: +v || null }))} />
+                      <Field label="نهاية الحفظ (صفحة)" value={trackingForm.memorization_end_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, memorization_end_page: +v || null }))} />
+                      <Field label="آخر صفحة سُمِّعت" value={trackingForm.last_memorized_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, last_memorized_page: +v || null }))} />
                       <div className="flex flex-col justify-end rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
                         <p className="text-[11px] text-night/50">الصفحة التالية</p>
                         <p className="text-sm font-bold text-emerald-700">
-                          {nextMemorizationPage ? `صفحة ${nextMemorizationPage}` : "—"}
+                          {nextMemPage ? `صفحة ${nextMemPage}` : "—"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* المراجعة */}
+                  {/* الحفظ — النطاق الثاني */}
+                  {showRange2Mem ? (
+                    <div>
+                      <h3 className="mb-3 font-verse text-base font-bold text-emerald-800">
+                        📖 الحفظ — النطاق الثاني
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="بداية الحفظ (صفحة)" value={trackingForm.memorization_start_page_2 ?? ""} disabled={!isAdmin}
+                          onChange={(v) => setTrackingForm((p) => ({ ...p, memorization_start_page_2: +v || null }))} />
+                        <Field label="نهاية الحفظ (صفحة)" value={trackingForm.memorization_end_page_2 ?? ""} disabled={!isAdmin}
+                          onChange={(v) => setTrackingForm((p) => ({ ...p, memorization_end_page_2: +v || null }))} />
+                        <Field label="آخر صفحة سُمِّعت" value={trackingForm.last_memorized_page_2 ?? ""} disabled={!isAdmin}
+                          onChange={(v) => setTrackingForm((p) => ({ ...p, last_memorized_page_2: +v || null }))} />
+                        <div className="flex flex-col justify-end rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+                          <p className="text-[11px] text-night/50">الصفحة التالية</p>
+                          <p className="text-sm font-bold text-emerald-700">
+                            {nextMemPage2 ? `صفحة ${nextMemPage2}` : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <button type="button" onClick={() => { setShowRange2Mem(false); setTrackingForm((p) => ({ ...p, memorization_start_page_2: null, memorization_end_page_2: null, last_memorized_page_2: null })); }}
+                          className="mt-2 text-xs text-red-400 transition hover:text-red-600">
+                          ✕ إزالة النطاق الثاني
+                        </button>
+                      )}
+                    </div>
+                  ) : isAdmin && (
+                    <button type="button" onClick={() => setShowRange2Mem(true)}
+                      className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 transition hover:text-emerald-800">
+                      <span className="text-lg">+</span> إضافة نطاق ثانٍ للحفظ
+                    </button>
+                  )}
+
+                  {/* المراجعة — النطاق الأول */}
                   <div>
                     <h3 className="mb-3 font-verse text-base font-bold text-emerald-800">
-                      🔄 المراجعة
+                      🔄 المراجعة — النطاق الأول
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field
-                        label="بداية المراجعة (صفحة)"
-                        value={trackingForm.review_start_page ?? ""}
-                        disabled={!isAdmin}
-                        onChange={(v) =>
-                          setTrackingForm((p) => ({ ...p, review_start_page: +v || null }))
-                        }
-                      />
-                      <Field
-                        label="نهاية المراجعة (صفحة)"
-                        value={trackingForm.review_end_page ?? ""}
-                        disabled={!isAdmin}
-                        onChange={(v) =>
-                          setTrackingForm((p) => ({ ...p, review_end_page: +v || null }))
-                        }
-                      />
-                      <Field
-                        label="آخر صفحة راجعها"
-                        value={trackingForm.last_reviewed_page ?? ""}
-                        disabled={!isAdmin}
-                        onChange={(v) =>
-                          setTrackingForm((p) => ({ ...p, last_reviewed_page: +v || null }))
-                        }
-                      />
+                      <Field label="بداية المراجعة (صفحة)" value={trackingForm.review_start_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, review_start_page: +v || null }))} />
+                      <Field label="نهاية المراجعة (صفحة)" value={trackingForm.review_end_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, review_end_page: +v || null }))} />
+                      <Field label="آخر صفحة راجعها" value={trackingForm.last_reviewed_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, last_reviewed_page: +v || null }))} />
                       <div className="flex flex-col justify-end rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
                         <p className="text-[11px] text-night/50">الصفحة التالية</p>
                         <p className="text-sm font-bold text-emerald-700">
-                          {nextReviewPage ? `صفحة ${nextReviewPage}` : "—"}
+                          {nextRevPage ? `صفحة ${nextRevPage}` : "—"}
                         </p>
                       </div>
                     </div>
                   </div>
+
+                  {/* المراجعة — النطاق الثاني */}
+                  {showRange2Rev ? (
+                    <div>
+                      <h3 className="mb-3 font-verse text-base font-bold text-emerald-800">
+                        🔄 المراجعة — النطاق الثاني
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Field label="بداية المراجعة (صفحة)" value={trackingForm.review_start_page_2 ?? ""} disabled={!isAdmin}
+                          onChange={(v) => setTrackingForm((p) => ({ ...p, review_start_page_2: +v || null }))} />
+                        <Field label="نهاية المراجعة (صفحة)" value={trackingForm.review_end_page_2 ?? ""} disabled={!isAdmin}
+                          onChange={(v) => setTrackingForm((p) => ({ ...p, review_end_page_2: +v || null }))} />
+                        <Field label="آخر صفحة راجعها" value={trackingForm.last_reviewed_page_2 ?? ""} disabled={!isAdmin}
+                          onChange={(v) => setTrackingForm((p) => ({ ...p, last_reviewed_page_2: +v || null }))} />
+                        <div className="flex flex-col justify-end rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+                          <p className="text-[11px] text-night/50">الصفحة التالية</p>
+                          <p className="text-sm font-bold text-emerald-700">
+                            {nextRevPage2 ? `صفحة ${nextRevPage2}` : "—"}
+                          </p>
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <button type="button" onClick={() => { setShowRange2Rev(false); setTrackingForm((p) => ({ ...p, review_start_page_2: null, review_end_page_2: null, last_reviewed_page_2: null })); }}
+                          className="mt-2 text-xs text-red-400 transition hover:text-red-600">
+                          ✕ إزالة النطاق الثاني
+                        </button>
+                      )}
+                    </div>
+                  ) : isAdmin && (
+                    <button type="button" onClick={() => setShowRange2Rev(true)}
+                      className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 transition hover:text-emerald-800">
+                      <span className="text-lg">+</span> إضافة نطاق ثانٍ للمراجعة
+                    </button>
+                  )}
 
                   {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={saveTracking}
-                      disabled={savingTracking}
-                      className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
-                    >
+                    <button type="button" onClick={saveTracking} disabled={savingTracking}
+                      className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60">
                       {savingTracking ? "جارٍ الحفظ..." : "حفظ التغييرات"}
                     </button>
                   )}
@@ -344,115 +448,72 @@ export default function MemorizationModal({
               {/* Logs Tab */}
               {activeTab === "logs" && (
                 <div className="space-y-5">
-                  {/* إضافة سجل جديد — للأدمن فقط */}
                   {isAdmin && (
                     <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
-                      <h3 className="mb-3 text-sm font-bold text-emerald-800">
-                        ➕ إضافة سجل جديد
-                      </h3>
+                      <h3 className="mb-3 text-sm font-bold text-emerald-800">➕ إضافة سجل جديد</h3>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="mb-1 block text-[11px] text-night/60">التاريخ</label>
-                          <input
-                            type="date"
-                            value={logForm.log_date}
+                          <input type="date" value={logForm.log_date}
                             onChange={(e) => setLogForm((p) => ({ ...p, log_date: e.target.value }))}
-                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
-                          />
+                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" />
                         </div>
                         <div>
                           <label className="mb-1 block text-[11px] text-night/60">النوع</label>
-                          <select
-                            value={logForm.type}
+                          <select value={logForm.type}
                             onChange={(e) => setLogForm((p) => ({ ...p, type: e.target.value as LogType }))}
-                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
-                          >
+                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500">
                             <option value="حفظ">حفظ</option>
                             <option value="مراجعة">مراجعة</option>
                           </select>
                         </div>
                         <div>
                           <label className="mb-1 block text-[11px] text-night/60">من صفحة</label>
-                          <input
-                            type="number"
-                            value={logForm.from_page || ""}
+                          <input type="number" value={logForm.from_page || ""}
                             onChange={(e) => setLogForm((p) => ({ ...p, from_page: +e.target.value }))}
-                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
-                            placeholder="1"
-                          />
+                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" placeholder="1" />
                         </div>
                         <div>
                           <label className="mb-1 block text-[11px] text-night/60">إلى صفحة</label>
-                          <input
-                            type="number"
-                            value={logForm.to_page || ""}
+                          <input type="number" value={logForm.to_page || ""}
                             onChange={(e) => setLogForm((p) => ({ ...p, to_page: +e.target.value }))}
-                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
-                            placeholder="5"
-                          />
+                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" placeholder="5" />
                         </div>
                         <div>
                           <label className="mb-1 block text-[11px] text-night/60">التقدير</label>
-                          <select
-                            value={logForm.grade}
+                          <select value={logForm.grade}
                             onChange={(e) => setLogForm((p) => ({ ...p, grade: e.target.value as LogGrade }))}
-                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
-                          >
-                            {GRADES.map((g) => (
-                              <option key={g} value={g}>{g}</option>
-                            ))}
+                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                            {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="mb-1 block text-[11px] text-night/60">ملاحظات</label>
-                          <input
-                            type="text"
-                            value={logForm.notes}
+                          <input type="text" value={logForm.notes}
                             onChange={(e) => setLogForm((p) => ({ ...p, notes: e.target.value }))}
-                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500"
-                            placeholder="اختياري"
-                          />
+                            className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500" placeholder="اختياري" />
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={saveLog}
-                        disabled={savingLog || !logForm.from_page || !logForm.to_page}
-                        className="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60"
-                      >
+                      <button type="button" onClick={saveLog} disabled={savingLog || !logForm.from_page || !logForm.to_page}
+                        className="mt-3 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60">
                         {savingLog ? "جارٍ الحفظ..." : "إضافة السجل"}
                       </button>
                     </div>
                   )}
 
-                  {/* قائمة السجلات */}
                   {logs.length === 0 ? (
                     <p className="text-center text-sm text-night/50">لا توجد سجلات بعد.</p>
                   ) : (
                     <div className="space-y-2">
                       {logs.map((log) => (
-                        <div
-                          key={log.id}
-                          className="flex items-start justify-between gap-3 rounded-xl border border-emerald-50 bg-white px-4 py-3 shadow-sm"
-                        >
-                          <div className="flex-1">
-                            <LogRow log={log} />
-                          </div>
+                        <div key={log.id} className="flex items-start justify-between gap-3 rounded-xl border border-emerald-50 bg-white px-4 py-3 shadow-sm">
+                          <div className="flex-1"><LogRow log={log} /></div>
                           {isAdmin && (
-                            <button
-                              type="button"
-                              onClick={() => deleteLog(log.id)}
-                              className="shrink-0 text-red-400 transition hover:text-red-600"
-                              aria-label="حذف السجل"
-                            >
+                            <button type="button" onClick={() => deleteLog(log.id)}
+                              className="shrink-0 text-red-400 transition hover:text-red-600" aria-label="حذف السجل">
                               <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-                                <path
-                                  d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.6"
-                                  strokeLinecap="round"
-                                />
+                                <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"
+                                  fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                               </svg>
                             </button>
                           )}
@@ -479,28 +540,15 @@ function SummaryCard({ icon, label, value }: { icon: string; label: string; valu
   );
 }
 
-function Field({
-  label,
-  value,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  value: number | string;
-  disabled: boolean;
-  onChange: (v: string) => void;
+function Field({ label, value, disabled, onChange }: {
+  label: string; value: number | string; disabled: boolean; onChange: (v: string) => void;
 }) {
   return (
     <div>
       <label className="mb-1 block text-[11px] text-night/60">{label}</label>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
+      <input type="number" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
         className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 disabled:bg-sand-50 disabled:text-night/50"
-        placeholder="—"
-      />
+        placeholder="—" />
     </div>
   );
 }
@@ -513,9 +561,7 @@ function LogRow({ log }: { log: MemorizationLog }) {
         {log.type}
       </span>
       <span className="text-night/70">ص {log.from_page} ← {log.to_page}</span>
-      <span className={`rounded-full px-2 py-0.5 font-bold ${GRADE_COLORS[log.grade]}`}>
-        {log.grade}
-      </span>
+      <span className={`rounded-full px-2 py-0.5 font-bold ${GRADE_COLORS[log.grade]}`}>{log.grade}</span>
       {log.notes && <span className="text-night/50">{log.notes}</span>}
     </div>
   );
