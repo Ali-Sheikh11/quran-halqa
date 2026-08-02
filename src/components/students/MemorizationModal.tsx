@@ -383,4 +383,196 @@ export default function MemorizationModal({
                                 className="shrink-0 text-red-400 transition hover:text-red-600">
                                 <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
                                   <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"
-     
+                                    fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ===== تبويب المراجعة ===== */}
+              {activeTab === "review" && (
+                <div className="space-y-6">
+
+                  {/* إعدادات المراجعة */}
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-4">
+                    <h3 className="mb-3 font-verse text-sm font-bold text-blue-800">
+                      🔄 النطاق الأول
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="بداية المراجعة" value={trackingForm.review_start_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, review_start_page: +v || null }))} />
+                      <Field label="نهاية المراجعة" value={trackingForm.review_end_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, review_end_page: +v || null }))} />
+                      <Field label="آخر صفحة راجعها" value={trackingForm.last_reviewed_page ?? ""} disabled={!isAdmin}
+                        onChange={(v) => setTrackingForm((p) => ({ ...p, last_reviewed_page: +v || null }))} />
+                      <div className="flex flex-col justify-end rounded-xl border border-blue-100 bg-white px-4 py-3">
+                        <p className="text-[11px] text-night/50">الصفحة التالية</p>
+                        <p className="text-sm font-bold text-blue-700">
+                          {nextRevPage ? `صفحة ${nextRevPage}` : "—"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* النطاق الثاني */}
+                    {showRange2Rev ? (
+                      <div className="mt-4">
+                        <h3 className="mb-3 font-verse text-sm font-bold text-blue-800">🔄 النطاق الثاني</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Field label="بداية المراجعة" value={trackingForm.review_start_page_2 ?? ""} disabled={!isAdmin}
+                            onChange={(v) => setTrackingForm((p) => ({ ...p, review_start_page_2: +v || null }))} />
+                          <Field label="نهاية المراجعة" value={trackingForm.review_end_page_2 ?? ""} disabled={!isAdmin}
+                            onChange={(v) => setTrackingForm((p) => ({ ...p, review_end_page_2: +v || null }))} />
+                          <Field label="آخر صفحة راجعها" value={trackingForm.last_reviewed_page_2 ?? ""} disabled={!isAdmin}
+                            onChange={(v) => setTrackingForm((p) => ({ ...p, last_reviewed_page_2: +v || null }))} />
+                          <div className="flex flex-col justify-end rounded-xl border border-blue-100 bg-white px-4 py-3">
+                            <p className="text-[11px] text-night/50">الصفحة التالية</p>
+                            <p className="text-sm font-bold text-blue-700">
+                              {nextRevPage2 ? `صفحة ${nextRevPage2}` : "—"}
+                            </p>
+                          </div>
+                        </div>
+                        {isAdmin && (
+                          <button type="button" onClick={() => { setShowRange2Rev(false); setTrackingForm((p) => ({ ...p, review_start_page_2: null, review_end_page_2: null, last_reviewed_page_2: null })); }}
+                            className="mt-2 text-xs text-red-400 transition hover:text-red-600">
+                            ✕ إزالة النطاق الثاني
+                          </button>
+                        )}
+                      </div>
+                    ) : isAdmin && (
+                      <button type="button" onClick={() => setShowRange2Rev(true)}
+                        className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-600 transition hover:text-blue-800">
+                        <span>+</span> إضافة نطاق ثانٍ
+                      </button>
+                    )}
+
+                    {isAdmin && (
+                      <button type="button" onClick={saveTracking} disabled={savingTracking}
+                        className="mt-4 w-full rounded-xl bg-blue-600 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60">
+                        {savingTracking ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* إضافة جلسة مراجعة */}
+                  {isAdmin && (
+                    <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                      <h3 className="mb-3 text-sm font-bold text-blue-800">➕ تسجيل جلسة مراجعة</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-[11px] text-night/60">التاريخ</label>
+                          <input type="date" value={revLogForm.log_date}
+                            onChange={(e) => setRevLogForm((p) => ({ ...p, log_date: e.target.value }))}
+                            className="w-full rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] text-night/60">التقدير</label>
+                          <select value={revLogForm.grade}
+                            onChange={(e) => setRevLogForm((p) => ({ ...p, grade: e.target.value as LogGrade }))}
+                            className="w-full rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500">
+                            {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] text-night/60">من صفحة</label>
+                          <input type="number" value={revLogForm.from_page || ""}
+                            onChange={(e) => setRevLogForm((p) => ({ ...p, from_page: +e.target.value }))}
+                            className="w-full rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" placeholder="1" />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] text-night/60">إلى صفحة</label>
+                          <input type="number" value={revLogForm.to_page || ""}
+                            onChange={(e) => setRevLogForm((p) => ({ ...p, to_page: +e.target.value }))}
+                            className="w-full rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" placeholder="5" />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="mb-1 block text-[11px] text-night/60">ملاحظات</label>
+                          <input type="text" value={revLogForm.notes}
+                            onChange={(e) => setRevLogForm((p) => ({ ...p, notes: e.target.value }))}
+                            className="w-full rounded-lg border border-blue-100 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500" placeholder="اختياري" />
+                        </div>
+                      </div>
+                      <button type="button"
+                        onClick={() => saveLog(revLogForm, setSavingRevLog, () => setRevLogForm(emptyRevLog))}
+                        disabled={savingRevLog || !revLogForm.from_page || !revLogForm.to_page}
+                        className="mt-3 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60">
+                        {savingRevLog ? "جارٍ الحفظ..." : "تسجيل الجلسة"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* سجل المراجعة */}
+                  <div>
+                    <h3 className="mb-3 text-sm font-bold text-night/60">
+                      سجل جلسات المراجعة ({revLogs.length})
+                    </h3>
+                    {revLogs.length === 0 ? (
+                      <p className="text-center text-sm text-night/40">لا توجد جلسات مسجّلة بعد.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {revLogs.map((log) => (
+                          <div key={log.id} className="flex items-center justify-between gap-3 rounded-xl border border-blue-50 bg-white px-4 py-3 shadow-sm">
+                            <LogRow log={log} />
+                            {isAdmin && (
+                              <button type="button" onClick={() => deleteLog(log.id)}
+                                className="shrink-0 text-red-400 transition hover:text-red-600">
+                                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                                  <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"
+                                    fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 px-4 py-3">
+      <p className="text-[11px] text-night/50">{icon} {label}</p>
+      <p className="mt-1 text-sm font-bold text-emerald-800">{value}</p>
+    </div>
+  );
+}
+
+function Field({ label, value, disabled, onChange }: {
+  label: string; value: number | string; disabled: boolean; onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] text-night/60">{label}</label>
+      <input type="number" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+        className="w-full rounded-lg border border-emerald-100 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 disabled:bg-sand-50 disabled:text-night/50"
+        placeholder="—" />
+    </div>
+  );
+}
+
+function LogRow({ log }: { log: MemorizationLog }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="font-medium text-night/60">{log.log_date}</span>
+      <span className={`rounded-full px-2 py-0.5 font-bold ${GRADE_COLORS[log.grade]}`}>
+        {log.grade}
+      </span>
+      <span className="text-night/70">ص {log.from_page} ← {log.to_page}</span>
+      {log.notes && <span className="text-night/50">{log.notes}</span>}
+    </div>
+  );
+}
