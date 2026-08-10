@@ -14,6 +14,7 @@ export type Student = {
   points: number;
   daily_points: number;
   daily_points_date: string | null;
+  yesterday_points: number;
   created_by: string | null;
   created_at: string;
   updated_at: string;
