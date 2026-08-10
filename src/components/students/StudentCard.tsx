@@ -127,8 +127,8 @@ export default function StudentCard({
       )}
 
       <div className="mt-4 w-full">
-        <ProgressBar points={student.points} size="sm" />
-      </div>
+  <ProgressBar points={student.points} size="sm" isAdmin={isAdmin} />
+</div>
 
       {isAdmin && (
         <div className="mt-4 flex w-full flex-col items-center gap-2">
