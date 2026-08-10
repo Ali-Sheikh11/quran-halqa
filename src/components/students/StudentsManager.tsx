@@ -161,18 +161,27 @@ export default function StudentsManager({
   const previousPoints = student.points;
   const previousDailyPoints = student.daily_points;
   const previousDailyDate = student.daily_points_date;
+  const previousYesterdayPoints = student.yesterday_points;
 
   const today = new Date().toISOString().split("T")[0];
   const isToday = student.daily_points_date === today;
-  const newDailyPoints = isToday
-    ? student.daily_points + delta
-    : delta; // يوم جديد — يبدأ من الصفر
 
-  // تحديث متفائل فوري
+  // إذا يوم جديد: نقاط اليوم السابق تنتقل إلى yesterday_points
+  const newDailyPoints = isToday ? student.daily_points + delta : delta;
+  const newYesterdayPoints = isToday
+    ? student.yesterday_points
+    : student.daily_points; // نقاط أمس = نقاط اليوم السابق
+
   setStudents((prev) =>
     prev.map((s) =>
       s.id === student.id
-        ? { ...s, points: newPoints, daily_points: newDailyPoints, daily_points_date: today }
+        ? {
+            ...s,
+            points: newPoints,
+            daily_points: newDailyPoints,
+            daily_points_date: today,
+            yesterday_points: newYesterdayPoints,
+          }
         : s
     )
   );
@@ -183,6 +192,7 @@ export default function StudentsManager({
       points: newPoints,
       daily_points: newDailyPoints,
       daily_points_date: today,
+      yesterday_points: newYesterdayPoints,
     })
     .eq("id", student.id);
 
@@ -190,13 +200,21 @@ export default function StudentsManager({
     setStudents((prev) =>
       prev.map((s) =>
         s.id === student.id
-          ? { ...s, points: previousPoints, daily_points: previousDailyPoints, daily_points_date: previousDailyDate }
+          ? {
+              ...s,
+              points: previousPoints,
+              daily_points: previousDailyPoints,
+              daily_points_date: previousDailyDate,
+              yesterday_points: previousYesterdayPoints,
+            }
           : s
       )
     );
   }
   setPendingPointsId(null);
   }
+
+
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return;
