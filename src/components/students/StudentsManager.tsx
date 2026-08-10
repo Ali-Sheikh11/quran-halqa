@@ -71,12 +71,19 @@ export default function StudentsManager({
     };
   }, [supabase]);
 
-  const sortedStudents = useMemo(() => {
-    return [...students].sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return a.created_at.localeCompare(b.created_at);
-    });
-  }, [students]);
+ const sortedStudents = useMemo(() => {
+  if (!isAdmin) {
+    // الزوار يرون الترتيب الأبجدي
+    return [...students].sort((a, b) =>
+      a.full_name.localeCompare(b.full_name, "ar")
+    );
+  }
+  // الأدمن يرى الترتيب بالنقاط
+  return [...students].sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    return a.created_at.localeCompare(b.created_at);
+  });
+}, [students, isAdmin]);
 
   const rankMap = useMemo(() => {
     const map = new Map<string, number>();
