@@ -147,27 +147,48 @@ export default function StudentsManager({
   }
 
   async function handlePointChange(student: Student, delta: number) {
-    const newPoints = Math.max(0, student.points + delta);
-    if (newPoints === student.points) return;
+  const newPoints = Math.max(0, student.points + delta);
+  if (newPoints === student.points) return;
 
-    setPendingPointsId(student.id);
-    const previousPoints = student.points;
+  setPendingPointsId(student.id);
+  const previousPoints = student.points;
+  const previousDailyPoints = student.daily_points;
+  const previousDailyDate = student.daily_points_date;
 
+  const today = new Date().toISOString().split("T")[0];
+  const isToday = student.daily_points_date === today;
+  const newDailyPoints = isToday
+    ? student.daily_points + delta
+    : delta; // يوم جديد — يبدأ من الصفر
+
+  // تحديث متفائل فوري
+  setStudents((prev) =>
+    prev.map((s) =>
+      s.id === student.id
+        ? { ...s, points: newPoints, daily_points: newDailyPoints, daily_points_date: today }
+        : s
+    )
+  );
+
+  const { error } = await supabase
+    .from("students")
+    .update({
+      points: newPoints,
+      daily_points: newDailyPoints,
+      daily_points_date: today,
+    })
+    .eq("id", student.id);
+
+  if (error) {
     setStudents((prev) =>
-      prev.map((s) => (s.id === student.id ? { ...s, points: newPoints } : s))
+      prev.map((s) =>
+        s.id === student.id
+          ? { ...s, points: previousPoints, daily_points: previousDailyPoints, daily_points_date: previousDailyDate }
+          : s
+      )
     );
-
-    const { error } = await supabase
-      .from("students")
-      .update({ points: newPoints })
-      .eq("id", student.id);
-
-    if (error) {
-      setStudents((prev) =>
-        prev.map((s) => (s.id === student.id ? { ...s, points: previousPoints } : s))
-      );
-    }
-    setPendingPointsId(null);
+  }
+  setPendingPointsId(null);
   }
 
   async function handleDeleteConfirm() {
