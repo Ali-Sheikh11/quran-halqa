@@ -303,6 +303,7 @@ export default function StudentsManager({
               student={student}
               rank={rankMap.get(student.id) ?? 0}
               isAdmin={isAdmin}
+              allStudents={students}
               pointsPending={pendingPointsId === student.id}
               onAddPoint={() => handlePointChange(student, 1)}
               onSubtractPoint={() => handlePointChange(student, -1)}
