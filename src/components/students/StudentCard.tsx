@@ -23,6 +23,7 @@ export default function StudentCard({
   student,
   rank,
   isAdmin,
+  allStudents,
   onEdit,
   onDelete,
   onAddPoint,
@@ -33,6 +34,7 @@ export default function StudentCard({
   student: Student;
   rank: number;
   isAdmin: boolean;
+  allStudents: Student[];
   onEdit: () => void;
   onDelete: () => void;
   onAddPoint: () => void;
@@ -43,7 +45,7 @@ export default function StudentCard({
   const [celebrate, setCelebrate] = useState(false);
   const prevPoints = useRef(student.points);
   const t = getTranslations(getSavedLocale());
-  const status = getStudentStatus(student);
+  const status = getStudentStatus(student, allStudents);
 
   useEffect(() => {
     const prev = prevPoints.current;
@@ -127,8 +129,8 @@ export default function StudentCard({
       )}
 
       <div className="mt-4 w-full">
-  <ProgressBar points={student.points} size="sm" isAdmin={isAdmin} />
-</div>
+        <ProgressBar points={student.points} size="sm" isAdmin={isAdmin} />
+      </div>
 
       {isAdmin && (
         <div className="mt-4 flex w-full flex-col items-center gap-2">
@@ -182,4 +184,4 @@ export default function StudentCard({
       )}
     </div>
   );
-}
+                }
