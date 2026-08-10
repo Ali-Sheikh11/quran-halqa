@@ -5,6 +5,7 @@ import type { Student } from "@/types/database.types";
 import StudentAvatar from "./StudentAvatar";
 import ProgressBar from "./ProgressBar";
 import { getSavedLocale, getTranslations } from "@/lib/i18n";
+import { getStudentStatus } from "@/lib/students/status";
 
 const RANK_BADGES: Record<number, string> = {
   1: "🥇",
@@ -42,6 +43,7 @@ export default function StudentCard({
   const [celebrate, setCelebrate] = useState(false);
   const prevPoints = useRef(student.points);
   const t = getTranslations(getSavedLocale());
+  const status = getStudentStatus(student);
 
   useEffect(() => {
     const prev = prevPoints.current;
@@ -89,13 +91,8 @@ export default function StudentCard({
             className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-100 bg-sand-50 text-emerald-700 transition hover:bg-emerald-50"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
-              <path
-                d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
+              <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"
+                fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
             </svg>
           </button>
           <button
@@ -105,13 +102,8 @@ export default function StudentCard({
             className="flex h-7 w-7 items-center justify-center rounded-full border border-red-100 bg-sand-50 text-red-600 transition hover:bg-red-50"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
-              <path
-                d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
+              <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"
+                fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
           </button>
         </div>
@@ -123,9 +115,16 @@ export default function StudentCard({
         {student.full_name}
       </h3>
 
-      <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold-light/30 px-3 py-1 text-xs font-semibold text-gold-deep">
-        {student.points} {t.points}
-      </span>
+      {/* الأدمن يرى النقاط الإجمالية — الزوار يرون حالة اليوم فقط */}
+      {isAdmin ? (
+        <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold-light/30 px-3 py-1 text-xs font-semibold text-gold-deep">
+          {student.points} {t.points}
+        </span>
+      ) : (
+        <span className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          {status.emoji} {status.label}
+        </span>
+      )}
 
       <div className="mt-4 w-full">
         <ProgressBar points={student.points} size="sm" />
@@ -158,27 +157,20 @@ export default function StudentCard({
             </button>
           </div>
 
-          {/* زر متابعة الحفظ */}
           <button
             type="button"
             onClick={onViewTracking}
             className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden="true">
-              <path
-                d="M12 6.5A5.5 5.5 0 1 1 6.5 12 5.5 5.5 0 0 1 12 6.5M12 2v2M12 20v2M2 12h2M20 12h2"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
+              <path d="M12 6.5A5.5 5.5 0 1 1 6.5 12 5.5 5.5 0 0 1 12 6.5M12 2v2M12 20v2M2 12h2M20 12h2"
+                fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
             متابعة الحفظ
           </button>
         </div>
       )}
 
-      {/* زر متابعة الحفظ للزوار أيضاً */}
       {!isAdmin && (
         <button
           type="button"
