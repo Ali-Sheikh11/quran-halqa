@@ -12,6 +12,8 @@ export type Student = {
   full_name: string;
   photo_url: string | null;
   points: number;
+  daily_points: number;
+  daily_points_date: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -20,19 +22,15 @@ export type Student = {
 export type MemorizationTracking = {
   id: string;
   student_id: string;
-  // النطاق الأول للحفظ
   memorization_start_page: number | null;
   memorization_end_page: number | null;
   last_memorized_page: number | null;
-  // النطاق الثاني للحفظ (اختياري)
   memorization_start_page_2: number | null;
   memorization_end_page_2: number | null;
   last_memorized_page_2: number | null;
-  // النطاق الأول للمراجعة
   review_start_page: number | null;
   review_end_page: number | null;
   last_reviewed_page: number | null;
-  // النطاق الثاني للمراجعة (اختياري)
   review_start_page_2: number | null;
   review_end_page_2: number | null;
   last_reviewed_page_2: number | null;
