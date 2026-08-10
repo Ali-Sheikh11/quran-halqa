@@ -28,6 +28,11 @@ export default async function StudentsPage() {
       <div className="relative mx-auto max-w-6xl px-5 py-10 sm:py-12">
         <div className="mb-8">
           <QuranicBanner />
+          {role === "viewer" && (
+  <p className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-center text-sm text-emerald-700">
+    التقييم وسيلة للتشجيع، وكل يوم فرصة جديدة للتقدم والإخلاص والاجتهاد. 🌱
+  </p>
+)}
         </div>
 
         <div className="mb-6">
