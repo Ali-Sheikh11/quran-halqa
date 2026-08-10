@@ -22,7 +22,7 @@ export default function HallOfFame({ students }: { students: Student[] }) {
 
       <div className="flex flex-wrap items-end justify-center gap-5 sm:gap-8">
         {topStudents.map((student, index) => {
-          const status = getStudentStatus(student);
+          const status = getStudentStatus(student, students);
           const isFirst = index === 0;
 
           return (
