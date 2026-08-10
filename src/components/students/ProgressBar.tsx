@@ -1,15 +1,18 @@
 /**
  * شريط تقدّم نحو المحطة التالية (50 → 100 → 150 ...).
- * النجمة تتحرك بسلاسة فوق الشريط مع الـ animation، والنسبة تُحسب
- * دائمًا بالنسبة للمحطة القادمة فقط (مثال: 53/100، 121/150).
+ * يُعرض للأدمن فقط — الزوار لا يرون النقاط ولا الشريط.
  */
 export default function ProgressBar({
   points,
   size = "md",
+  isAdmin = false,
 }: {
   points: number;
   size?: "sm" | "md";
+  isAdmin?: boolean;
 }) {
+  if (!isAdmin) return null;
+
   const safePoints = Math.max(0, points);
   const nextMilestone = (Math.floor(safePoints / 50) + 1) * 50;
   const percent = Math.min(100, Math.max(0, (safePoints / nextMilestone) * 100));
@@ -39,9 +42,7 @@ export default function ProgressBar({
         </span>
       </div>
       <div dir="rtl" className="mt-1.5 flex items-center justify-between text-[11px] font-semibold text-night/45">
-        <span>
-          {safePoints}/{nextMilestone}
-        </span>
+        <span>{safePoints}/{nextMilestone}</span>
         <span className="text-gold-deep">نحو المحطة القادمة</span>
       </div>
     </div>
