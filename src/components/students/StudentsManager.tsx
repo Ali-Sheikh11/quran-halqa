@@ -317,7 +317,7 @@ export default function StudentsManager({
               aria-pressed={showPoints}
             >
               <span aria-hidden="true">
-                {showPoints ? "🙈" : "👁️"}
+                {showPoints ? "" : ""}
               </span>
               {showPoints ? "إخفاء النقاط" : "إظهار النقاط"}
             </button>
