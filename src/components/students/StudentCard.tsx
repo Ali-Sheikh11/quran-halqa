@@ -45,7 +45,10 @@ export default function StudentCard({
   pointsPending?: boolean;
 }) {
   const [celebrate, setCelebrate] = useState(false);
+  const [showPlusOne, setShowPlusOne] = useState(false);
+
   const prevPoints = useRef(student.points);
+
   const t = getTranslations(getSavedLocale());
   const status = getStudentStatus(student, allStudents);
 
@@ -59,7 +62,9 @@ export default function StudentCard({
     ) {
       setCelebrate(true);
 
-      const timer = setTimeout(() => setCelebrate(false), 1100);
+      const timer = setTimeout(() => {
+        setCelebrate(false);
+      }, 1100);
 
       prevPoints.current = student.points;
 
@@ -71,12 +76,34 @@ export default function StudentCard({
 
   const ring = rank <= 3 ? RANK_RING[rank] : "";
 
+  const handleAddPoint = () => {
+    if (pointsPending) return;
+
+    setShowPlusOne(true);
+
+    setTimeout(() => {
+      setShowPlusOne(false);
+    }, 850);
+
+    onAddPoint();
+  };
+
   return (
     <div
       className={`group relative flex flex-col items-center rounded-2xl border border-emerald-100 bg-white px-5 py-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-ornate ${ring} ${
         celebrate ? "animate-[pulse_0.55s_ease-in-out_2]" : ""
       }`}
     >
+      {/* تأثير +1 */}
+      {showPlusOne && (
+        <span
+          className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 animate-[pointUp_0.85s_ease-out_forwards] text-xl font-black text-emerald-600 drop-shadow-sm"
+          aria-hidden="true"
+        >
+          +1
+        </span>
+      )}
+
       {rank <= 3 && (
         <span
           className="absolute -top-3 right-1/2 translate-x-1/2 text-xl drop-shadow-sm"
@@ -151,7 +178,7 @@ export default function StudentCard({
         {student.full_name}
       </h3>
 
-      {/* الأدمن يرى النقاط فقط عند الضغط على "إظهار النقاط" — الزوار يرون الحالة */}
+      {/* النقاط للأدمن فقط عند تفعيل إظهار النقاط */}
       {isAdmin && showPoints ? (
         <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold-light/30 px-3 py-1 text-xs font-semibold text-gold-deep">
           {student.points} {t.points}
@@ -162,13 +189,16 @@ export default function StudentCard({
         </span>
       )}
 
-      <div className="mt-4 w-full">
-        <ProgressBar
-          points={student.points}
-          size="sm"
-          isAdmin={isAdmin}
-        />
-      </div>
+      {/* شريط التقدم مخفي مع النقاط */}
+      {isAdmin && showPoints && (
+        <div className="mt-4 w-full">
+          <ProgressBar
+            points={student.points}
+            size="sm"
+            isAdmin={isAdmin}
+          />
+        </div>
+      )}
 
       {isAdmin && (
         <div className="mt-4 flex w-full flex-col items-center gap-2">
@@ -196,7 +226,7 @@ export default function StudentCard({
 
             <button
               type="button"
-              onClick={onAddPoint}
+              onClick={handleAddPoint}
               disabled={pointsPending}
               aria-label={`إضافة نقطة لـ ${student.full_name}`}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
@@ -248,6 +278,25 @@ export default function StudentCard({
           متابعة الحفظ
         </button>
       )}
+
+      <style jsx>{`
+        @keyframes pointUp {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, 8px) scale(0.8);
+          }
+
+          20% {
+            opacity: 1;
+            transform: translate(-50%, 0) scale(1.1);
+          }
+
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -28px) scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }
