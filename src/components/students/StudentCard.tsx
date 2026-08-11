@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Student } from "@/types/database.types";
-import StudentAvatar from "./StudentAvatar";
 import ProgressBar from "./ProgressBar";
+import StudentAvatar from "./StudentAvatar";
 import { getSavedLocale, getTranslations } from "@/lib/i18n";
 import { getStudentStatus } from "@/lib/students/status";
 
@@ -45,9 +45,10 @@ export default function StudentCard({
   pointsPending?: boolean;
 }) {
   const [celebrate, setCelebrate] = useState(false);
-  const [showPlusOne, setShowPlusOne] = useState(false);
+  const [pointEffect, setPointEffect] = useState<1 | -1 | null>(null);
 
   const prevPoints = useRef(student.points);
+  const effectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const t = getTranslations(getSavedLocale());
   const status = getStudentStatus(student, allStudents);
@@ -74,18 +75,46 @@ export default function StudentCard({
     prevPoints.current = student.points;
   }, [student.points]);
 
+  useEffect(() => {
+    return () => {
+      if (effectTimer.current) {
+        clearTimeout(effectTimer.current);
+      }
+    };
+  }, []);
+
   const ring = rank <= 3 ? RANK_RING[rank] : "";
+
+  const showPointEffect = (effect: 1 | -1) => {
+    if (pointsPending) return;
+
+    if (effectTimer.current) {
+      clearTimeout(effectTimer.current);
+    }
+
+    setPointEffect(null);
+
+    requestAnimationFrame(() => {
+      setPointEffect(effect);
+
+      effectTimer.current = setTimeout(() => {
+        setPointEffect(null);
+      }, 900);
+    });
+  };
 
   const handleAddPoint = () => {
     if (pointsPending) return;
 
-    setShowPlusOne(true);
-
-    setTimeout(() => {
-      setShowPlusOne(false);
-    }, 850);
-
+    showPointEffect(1);
     onAddPoint();
+  };
+
+  const handleSubtractPoint = () => {
+    if (pointsPending || student.points <= 0) return;
+
+    showPointEffect(-1);
+    onSubtractPoint();
   };
 
   return (
@@ -94,13 +123,14 @@ export default function StudentCard({
         celebrate ? "animate-[pulse_0.55s_ease-in-out_2]" : ""
       }`}
     >
-      {/* تأثير +1 */}
-      {showPlusOne && (
+      {/* التأثير البصري لإضافة/إنقاص النقطة */}
+      {pointEffect !== null && (
         <span
-          className="pointer-events-none absolute left-1/2 top-12 z-20 -translate-x-1/2 animate-[pointUp_0.85s_ease-out_forwards] text-xl font-black text-emerald-600 drop-shadow-sm"
+          key={`${student.id}-${student.points}-${pointEffect}`}
+          className="pointer-events-none absolute left-1/2 top-10 z-30 -translate-x-1/2 select-none whitespace-nowrap text-2xl font-black text-blue-600 drop-shadow-[0_3px_10px_rgba(37,99,235,0.35)] animate-[pointChange_0.9s_cubic-bezier(0.22,1,0.36,1)_forwards]"
           aria-hidden="true"
         >
-          +1
+          {pointEffect === 1 ? "+1" : "−1"}
         </span>
       )}
 
@@ -178,7 +208,6 @@ export default function StudentCard({
         {student.full_name}
       </h3>
 
-      {/* النقاط للأدمن فقط عند تفعيل إظهار النقاط */}
       {isAdmin && showPoints ? (
         <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold-light/30 px-3 py-1 text-xs font-semibold text-gold-deep">
           {student.points} {t.points}
@@ -189,7 +218,7 @@ export default function StudentCard({
         </span>
       )}
 
-      {/* شريط التقدم مخفي مع النقاط */}
+      {/* شريط التقدم يظهر مع النقاط فقط */}
       {isAdmin && showPoints && (
         <div className="mt-4 w-full">
           <ProgressBar
@@ -205,10 +234,10 @@ export default function StudentCard({
           <div className="flex items-center justify-center gap-2">
             <button
               type="button"
-              onClick={onSubtractPoint}
+              onClick={handleSubtractPoint}
               disabled={pointsPending || student.points <= 0}
               aria-label={`إنقاص نقطة من ${student.full_name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-600 transition hover:border-blue-300 hover:bg-blue-100 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -229,7 +258,7 @@ export default function StudentCard({
               onClick={handleAddPoint}
               disabled={pointsPending}
               aria-label={`إضافة نقطة لـ ${student.full_name}`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-600 transition hover:border-blue-300 hover:bg-blue-100 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -280,20 +309,25 @@ export default function StudentCard({
       )}
 
       <style jsx>{`
-        @keyframes pointUp {
+        @keyframes pointChange {
           0% {
             opacity: 0;
-            transform: translate(-50%, 8px) scale(0.8);
+            transform: translate(-50%, 18px) scale(0.55);
           }
 
-          20% {
+          18% {
             opacity: 1;
-            transform: translate(-50%, 0) scale(1.1);
+            transform: translate(-50%, 0) scale(1.25);
+          }
+
+          38% {
+            opacity: 1;
+            transform: translate(-50%, -4px) scale(1.05);
           }
 
           100% {
             opacity: 0;
-            transform: translate(-50%, -28px) scale(1);
+            transform: translate(-50%, -48px) scale(1);
           }
         }
       `}</style>
