@@ -127,7 +127,7 @@ export default function StudentCard({
       {pointEffect !== null && (
         <span
           key={`${student.id}-${student.points}-${pointEffect}`}
-          className="pointer-events-none absolute left-1/2 top-10 z-30 -translate-x-1/2 select-none whitespace-nowrap text-2xl font-black text-blue-600 drop-shadow-[0_3px_10px_rgba(37,99,235,0.35)] animate-[pointChange_0.9s_cubic-bezier(0.22,1,0.36,1)_forwards]"
+          className="pointer-events-none absolute left-1/2 top-10 z-30 -translate-x-1/2 select-none whitespace-nowrap text-4xl font-black text-blue-600 drop-shadow-[0_3px_10px_rgba(37,99,235,0.35)] animate-[pointChange_1.5s_cubic-bezier(0.22,1,0.36,1)_forwards]"
           aria-hidden="true"
         >
           {pointEffect === 1 ? "+1" : "−1"}
