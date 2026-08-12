@@ -23,23 +23,55 @@ type FormModalState =
   | null;
 
 /**
- * الجمعة عطلة.
- *
- * عند بدء يوم جديد:
- * - السبت يقارن مع الخميس.
- * - الأحد يقارن مع السبت.
- * - باقي الأيام تقارن مع اليوم الدراسي السابق.
+ * الحصول على التاريخ الحالي بتوقيت تركيا.
  */
-function getPreviousStudyDate(date: Date): string {
-  const previous = new Date(date);
-  previous.setDate(previous.getDate() - 1);
+function getTurkeyDate(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
 
-  // الجمعة = 5
-  if (previous.getDay() === 5) {
-    previous.setDate(previous.getDate() - 1);
-  }
+  const get = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "0";
 
-  return previous.toISOString().split("T")[0];
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/**
+ * الحصول على الوقت الحالي بتوقيت تركيا.
+ */
+function getTurkeyNow(): Date {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const get = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "0";
+
+  return new Date(
+    Number(get("year")),
+    Number(get("month")) - 1,
+    Number(get("day")),
+    Number(get("hour")),
+    Number(get("minute")),
+    Number(get("second"))
+  );
+}
+
+/**
+ * الجمعة = عطلة.
+ */
+function isFridayInTurkey(): boolean {
+  return getTurkeyNow().getDay() === 5;
 }
 
 export default function StudentsManager({
@@ -53,20 +85,27 @@ export default function StudentsManager({
   const [supabase] = useState(() => createClient());
   const t = getTranslations(getSavedLocale());
 
-  const [students, setStudents] = useState<Student[]>(initialStudents);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [students, setStudents] =
+    useState<Student[]>(initialStudents);
+
+  const [searchTerm, setSearchTerm] =
+    useState("");
 
   const [formModal, setFormModal] =
     useState<FormModalState>(null);
+
   const [formError, setFormError] =
     useState<string | null>(null);
+
   const [formSubmitting, setFormSubmitting] =
     useState(false);
 
   const [deleteTarget, setDeleteTarget] =
     useState<Student | null>(null);
+
   const [deleteSubmitting, setDeleteSubmitting] =
     useState(false);
+
   const [deleteError, setDeleteError] =
     useState<string | null>(null);
 
@@ -77,8 +116,64 @@ export default function StudentsManager({
     useState<string | null>(null);
 
   // النقاط والشريط مخفيان افتراضيًا.
-  const [showPoints, setShowPoints] = useState(false);
+  const [showPoints, setShowPoints] =
+    useState(false);
 
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * تحديث التقييم تلقائيًا كل ساعة
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   *
+   * StudentCard يعتمد على getStudentStatus().
+   *
+   * لذلك لا نحتاج تغيير StudentCard.
+   * مجرد إعادة render تكفي لإعادة حساب الحالة.
+   *
+   * نستخدم timeout إلى بداية الساعة التالية
+   * ثم نبدأ interval كل ساعة.
+   */
+  const [, setStatusRefresh] =
+    useState(0);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null =
+      null;
+
+    const refresh = () => {
+      setStatusRefresh((value) => value + 1);
+    };
+
+    const now = new Date();
+
+    // الوقت المتبقي حتى بداية الساعة القادمة.
+    const millisecondsUntilNextHour =
+      (60 - now.getMinutes()) * 60 * 1000 -
+      now.getSeconds() * 1000 -
+      now.getMilliseconds();
+
+    const timeout = setTimeout(() => {
+      refresh();
+
+      interval = setInterval(
+        refresh,
+        60 * 60 * 1000
+      );
+    }, millisecondsUntilNextHour);
+
+    return () => {
+      clearTimeout(timeout);
+
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, []);
+
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * Supabase Realtime
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   */
   useEffect(() => {
     const channel = supabase
       .channel("students-realtime")
@@ -92,28 +187,42 @@ export default function StudentsManager({
         (payload) => {
           setStudents((prev) => {
             if (payload.eventType === "INSERT") {
-              const incoming = payload.new as Student;
+              const incoming =
+                payload.new as Student;
 
-              if (prev.some((s) => s.id === incoming.id)) {
+              if (
+                prev.some(
+                  (student) =>
+                    student.id === incoming.id
+                )
+              ) {
                 return prev;
               }
 
-              return [incoming, ...prev];
+              return [
+                incoming,
+                ...prev,
+              ];
             }
 
             if (payload.eventType === "UPDATE") {
-              const updated = payload.new as Student;
+              const updated =
+                payload.new as Student;
 
-              return prev.map((s) =>
-                s.id === updated.id ? updated : s
+              return prev.map((student) =>
+                student.id === updated.id
+                  ? updated
+                  : student
               );
             }
 
             if (payload.eventType === "DELETE") {
-              const removedId = (payload.old as Partial<Student>).id;
+              const removedId =
+                (payload.old as Partial<Student>).id;
 
               return prev.filter(
-                (s) => s.id !== removedId
+                (student) =>
+                  student.id !== removedId
               );
             }
 
@@ -128,10 +237,18 @@ export default function StudentsManager({
     };
   }, [supabase]);
 
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * الترتيب
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   */
   const sortedStudents = useMemo(() => {
     if (!isAdmin) {
       return [...students].sort((a, b) =>
-        a.full_name.localeCompare(b.full_name, "ar")
+        a.full_name.localeCompare(
+          b.full_name,
+          "ar"
+        )
       );
     }
 
@@ -140,43 +257,75 @@ export default function StudentsManager({
         return b.points - a.points;
       }
 
-      return a.created_at.localeCompare(b.created_at);
+      return a.created_at.localeCompare(
+        b.created_at
+      );
     });
   }, [students, isAdmin]);
 
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * الترتيب الرقمي
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   */
   const rankMap = useMemo(() => {
-    const map = new Map<string, number>();
+    const map =
+      new Map<string, number>();
 
     let currentRank = 0;
     let lastPoints: number | null = null;
 
-    sortedStudents.forEach((student, index) => {
-      if (
-        lastPoints === null ||
-        student.points !== lastPoints
-      ) {
-        currentRank = index + 1;
-        lastPoints = student.points;
-      }
+    sortedStudents.forEach(
+      (student, index) => {
+        if (
+          lastPoints === null ||
+          student.points !== lastPoints
+        ) {
+          currentRank = index + 1;
+          lastPoints = student.points;
+        }
 
-      map.set(student.id, currentRank);
-    });
+        map.set(
+          student.id,
+          currentRank
+        );
+      }
+    );
 
     return map;
   }, [sortedStudents]);
 
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * البحث
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   */
   const filteredStudents = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term =
+      searchTerm
+        .trim()
+        .toLowerCase();
 
     if (!term) {
       return sortedStudents;
     }
 
-    return sortedStudents.filter((student) =>
-      student.full_name.toLowerCase().includes(term)
+    return sortedStudents.filter(
+      (student) =>
+        student.full_name
+          .toLowerCase()
+          .includes(term)
     );
-  }, [sortedStudents, searchTerm]);
+  }, [
+    sortedStudents,
+    searchTerm,
+  ]);
 
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * إضافة / تعديل طالب
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   */
   async function handleFormSubmit(
     data: StudentFormSubmitData
   ) {
@@ -184,30 +333,46 @@ export default function StudentsManager({
     setFormError(null);
 
     try {
-      if (formModal?.mode === "add") {
-        const id = crypto.randomUUID();
+      /**
+       * إضافة طالب
+       */
+      if (
+        formModal?.mode === "add"
+      ) {
+        const id =
+          crypto.randomUUID();
 
-        let photoUrl: string | null = null;
+        let photoUrl:
+          | string
+          | null = null;
 
         if (data.file) {
-          photoUrl = await uploadStudentPhoto(
-            supabase,
-            id,
-            data.file
-          );
+          photoUrl =
+            await uploadStudentPhoto(
+              supabase,
+              id,
+              data.file
+            );
         }
 
-        const { data: userData } =
+        const {
+          data: userData,
+        } =
           await supabase.auth.getUser();
 
-        const { error } = await supabase
-          .from("students")
-          .insert({
-            id,
-            full_name: data.name,
-            photo_url: photoUrl,
-            created_by: userData.user?.id ?? null,
-          });
+        const { error } =
+          await supabase
+            .from("students")
+            .insert({
+              id,
+              full_name:
+                data.name,
+              photo_url:
+                photoUrl,
+              created_by:
+                userData.user?.id ??
+                null,
+            });
 
         if (error) {
           throw new Error(
@@ -216,26 +381,41 @@ export default function StudentsManager({
         }
       }
 
-      if (formModal?.mode === "edit") {
-        const studentId = formModal.student.id;
+      /**
+       * تعديل طالب
+       */
+      if (
+        formModal?.mode === "edit"
+      ) {
+        const studentId =
+          formModal.student.id;
 
-        let photoUrl = formModal.student.photo_url;
+        let photoUrl =
+          formModal.student
+            .photo_url;
 
         if (data.file) {
-          photoUrl = await uploadStudentPhoto(
-            supabase,
-            studentId,
-            data.file
-          );
+          photoUrl =
+            await uploadStudentPhoto(
+              supabase,
+              studentId,
+              data.file
+            );
         }
 
-        const { error } = await supabase
-          .from("students")
-          .update({
-            full_name: data.name,
-            photo_url: photoUrl,
-          })
-          .eq("id", studentId);
+        const { error } =
+          await supabase
+            .from("students")
+            .update({
+              full_name:
+                data.name,
+              photo_url:
+                photoUrl,
+            })
+            .eq(
+              "id",
+              studentId
+            );
 
         if (error) {
           throw new Error(
@@ -256,146 +436,187 @@ export default function StudentsManager({
     }
   }
 
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * تغيير نقاط الطالب
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   *
+   * مهم:
+   *
+   * لم نعد ننقل النقاط إلى
+   * yesterday_points.
+   *
+   * التقييم يعتمد على:
+   *
+   * daily_points
+   * +
+   * daily_points_date
+   *
+   * وبالتالي لا يوجد ارتباط مباشر
+   * بمفهوم "أمس".
+   */
   async function handlePointChange(
     student: Student,
     delta: number
   ) {
-    const newPoints = Math.max(
-      0,
-      student.points + delta
-    );
+    const newPoints =
+      Math.max(
+        0,
+        student.points + delta
+      );
 
-    if (newPoints === student.points) {
+    if (
+      newPoints ===
+      student.points
+    ) {
       return;
     }
 
-    setPendingPointsId(student.id);
+    /**
+     * الجمعة عطلة.
+     */
+    if (
+      isFridayInTurkey()
+    ) {
+      return;
+    }
 
-    const previousPoints = student.points;
-    const previousDailyPoints = student.daily_points;
-    const previousDailyDate = student.daily_points_date;
+    setPendingPointsId(
+      student.id
+    );
+
+    /**
+     * حفظ الحالة السابقة
+     * للـ rollback.
+     */
+    const previousPoints =
+      student.points;
+
+    const previousDailyPoints =
+      student.daily_points;
+
+    const previousDailyDate =
+      student.daily_points_date;
+
     const previousYesterdayPoints =
       student.yesterday_points;
 
-    const now = new Date();
+    /**
+     * التاريخ الصحيح بتوقيت تركيا.
+     */
     const today =
-      now.toISOString().split("T")[0];
+      getTurkeyDate();
 
-    const isToday =
-      student.daily_points_date === today;
+    /**
+     * هل النقاط اليومية
+     * تخص اليوم الحالي؟
+     */
+    const isCurrentDay =
+      student.daily_points_date ===
+      today;
 
     let newDailyPoints: number;
-    let newYesterdayPoints: number;
 
-    if (isToday) {
-      // نفس اليوم الدراسي.
+    if (isCurrentDay) {
+      /**
+       * ما زلنا في نفس يوم التقييم.
+       */
       newDailyPoints =
-        Math.max(0, student.daily_points + delta);
-
-      newYesterdayPoints =
-        student.yesterday_points;
+        Math.max(
+          0,
+          student.daily_points +
+            delta
+        );
     } else {
       /**
-       * يوم جديد.
+       * بدأ يوم تقييم جديد.
        *
-       * مهم:
-       * لا ننقل نقاط أي يوم تقويمي عشوائيًا.
-       * الجمعة عطلة، لذلك السبت لا يأخذ الجمعة
-       * كيوم سابق.
+       * لا ننقل اليوم السابق
+       * إلى yesterday_points.
        *
-       * yesterday_points يجب أن يمثل آخر يوم دراسة.
+       * يبدأ تقييم اليوم
+       * من الصفر ثم يأخذ delta.
        */
-      newDailyPoints = Math.max(0, delta);
-
-      newYesterdayPoints =
-        student.daily_points_date
-          ? student.daily_points
-          : student.yesterday_points;
+      newDailyPoints =
+        Math.max(
+          0,
+          delta
+        );
     }
 
     /**
-     * الجمعة عطلة:
-     *
-     * لا نبدأ يومًا دراسيًا جديدًا فيها.
-     * إذا حاول الأدمن تعديل النقاط يوم الجمعة،
-     * لا نعتبرها يوم دراسة مستقلًا.
+     * Optimistic UI
      */
-    const dayOfWeek = now.getDay();
-
-    if (dayOfWeek === 5) {
-      setPendingPointsId(null);
-      return;
-    }
-
-    /**
-     * إذا كان اليوم هو أول يوم دراسة بعد العطلة،
-     * نستخدم آخر يوم دراسة فعليًا.
-     *
-     * السبت -> الخميس.
-     */
-    if (!isToday) {
-      const previousStudyDate =
-        getPreviousStudyDate(now);
-
-      /**
-       * إذا كانت البيانات الحالية من آخر يوم دراسة،
-       * نستخدمها للمقارنة.
-       */
-      if (
-        student.daily_points_date ===
-        previousStudyDate
-      ) {
-        newYesterdayPoints =
-          student.daily_points;
-      } else {
-        /**
-         * إذا لم تكن البيانات من آخر يوم دراسة،
-         * لا نعتبر قيمة قديمة كأنها "أمس".
-         */
-        newYesterdayPoints =
-          student.yesterday_points ?? 0;
-      }
-    }
-
-    // تحديث Optimistic UI فورًا.
     setStudents((prev) =>
       prev.map((s) =>
         s.id === student.id
           ? {
               ...s,
-              points: newPoints,
-              daily_points: newDailyPoints,
-              daily_points_date: today,
+
+              points:
+                newPoints,
+
+              daily_points:
+                newDailyPoints,
+
+              daily_points_date:
+                today,
+
+              /**
+               * نُبقي القيمة القديمة
+               * كما هي للتوافق مع
+               * قاعدة البيانات الحالية.
+               *
+               * لكن منطق التقييم الجديد
+               * لا يعتمد عليها.
+               */
               yesterday_points:
-                newYesterdayPoints,
+                s.yesterday_points,
             }
           : s
       )
     );
 
-    const { error } = await supabase
-      .from("students")
-      .update({
-        points: newPoints,
-        daily_points: newDailyPoints,
-        daily_points_date: today,
-        yesterday_points:
-          newYesterdayPoints,
-      })
-      .eq("id", student.id);
+    /**
+     * حفظ في Supabase
+     */
+    const { error } =
+      await supabase
+        .from("students")
+        .update({
+          points:
+            newPoints,
 
+          daily_points:
+            newDailyPoints,
+
+          daily_points_date:
+            today,
+        })
+        .eq(
+          "id",
+          student.id
+        );
+
+    /**
+     * Rollback
+     */
     if (error) {
-      // Rollback إذا فشل الحفظ.
       setStudents((prev) =>
         prev.map((s) =>
           s.id === student.id
             ? {
                 ...s,
-                points: previousPoints,
+
+                points:
+                  previousPoints,
+
                 daily_points:
                   previousDailyPoints,
+
                 daily_points_date:
                   previousDailyDate,
+
                 yesterday_points:
                   previousYesterdayPoints,
               }
@@ -407,6 +628,11 @@ export default function StudentsManager({
     setPendingPointsId(null);
   }
 
+  /**
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   * حذف الطالب
+   * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   */
   async function handleDeleteConfirm() {
     if (!deleteTarget) {
       return;
@@ -421,10 +647,14 @@ export default function StudentsManager({
         deleteTarget.id
       );
 
-      const { error } = await supabase
-        .from("students")
-        .delete()
-        .eq("id", deleteTarget.id);
+      const { error } =
+        await supabase
+          .from("students")
+          .delete()
+          .eq(
+            "id",
+            deleteTarget.id
+          );
 
       if (error) {
         throw error;
@@ -442,14 +672,21 @@ export default function StudentsManager({
 
   return (
     <div>
+      {/* الإحصائيات */}
       <div className="mb-6">
-        <StatsBar students={students} />
+        <StatsBar
+          students={students}
+        />
       </div>
 
+      {/* قاعة الشرف */}
       <div className="mb-8">
-        <HallOfFame students={students} />
+        <HallOfFame
+          students={students}
+        />
       </div>
 
+      {/* البحث والأزرار */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
           <svg
@@ -465,6 +702,7 @@ export default function StudentsManager({
               stroke="currentColor"
               strokeWidth="1.6"
             />
+
             <path
               d="m20 20-3.5-3.5"
               stroke="currentColor"
@@ -477,9 +715,13 @@ export default function StudentsManager({
             type="search"
             value={searchTerm}
             onChange={(e) =>
-              setSearchTerm(e.target.value)
+              setSearchTerm(
+                e.target.value
+              )
             }
-            placeholder={t.searchPlaceholder}
+            placeholder={
+              t.searchPlaceholder
+            }
             className="w-full rounded-xl border border-emerald-100 bg-white py-2.5 pr-10 pl-4 text-sm text-night outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
         </div>
@@ -489,10 +731,14 @@ export default function StudentsManager({
             <button
               type="button"
               onClick={() =>
-                setShowPoints((prev) => !prev)
+                setShowPoints(
+                  (prev) => !prev
+                )
               }
               className="inline-flex shrink-0 items-center justify-center rounded-xl border border-gold/40 bg-gold-light/20 px-4 py-2.5 text-sm font-bold text-gold-deep transition hover:bg-gold-light/40"
-              aria-pressed={showPoints}
+              aria-pressed={
+                showPoints
+              }
             >
               {showPoints
                 ? "إخفاء النقاط"
@@ -503,7 +749,10 @@ export default function StudentsManager({
               type="button"
               onClick={() => {
                 setFormError(null);
-                setFormModal({ mode: "add" });
+
+                setFormModal({
+                  mode: "add",
+                });
               }}
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
             >
@@ -526,19 +775,25 @@ export default function StudentsManager({
         )}
       </div>
 
+      {/* عدد الطلاب */}
       <p className="mb-4 text-sm text-night/50">
         {filteredStudents.length}{" "}
-        {filteredStudents.length === 1
+        {filteredStudents.length ===
+        1
           ? t.studentCount
           : t.studentCountPlural}
+
         {searchTerm &&
           ` ${t.outOf} ${students.length}`}
       </p>
 
-      {filteredStudents.length === 0 ? (
+      {/* الطلاب */}
+      {filteredStudents.length ===
+      0 ? (
         <div className="rounded-2xl border border-dashed border-emerald-200 bg-white px-6 py-14 text-center">
           <p className="text-sm text-night/50">
-            {students.length === 0
+            {students.length ===
+            0
               ? isAdmin
                 ? t.noStudentsAdmin
                 : t.noStudentsPublic
@@ -547,68 +802,106 @@ export default function StudentsManager({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {filteredStudents.map((student) => (
-            <StudentCard
-              key={student.id}
-              student={student}
-              rank={
-                rankMap.get(student.id) ?? 0
-              }
-              isAdmin={isAdmin}
-              allStudents={students}
-              showPoints={showPoints}
-              pointsPending={
-                pendingPointsId === student.id
-              }
-              onAddPoint={() =>
-                handlePointChange(student, 1)
-              }
-              onSubtractPoint={() =>
-                handlePointChange(student, -1)
-              }
-              onViewTracking={() =>
-                setTrackingStudent(student)
-              }
-              onEdit={() => {
-                setFormError(null);
-                setFormModal({
-                  mode: "edit",
-                  student,
-                });
-              }}
-              onDelete={() => {
-                setDeleteError(null);
-                setDeleteTarget(student);
-              }}
-            />
-          ))}
+          {filteredStudents.map(
+            (student) => (
+              <StudentCard
+                key={student.id}
+                student={student}
+                rank={
+                  rankMap.get(
+                    student.id
+                  ) ?? 0
+                }
+                isAdmin={isAdmin}
+                allStudents={
+                  students
+                }
+                showPoints={
+                  showPoints
+                }
+                pointsPending={
+                  pendingPointsId ===
+                  student.id
+                }
+                onAddPoint={() =>
+                  handlePointChange(
+                    student,
+                    1
+                  )
+                }
+                onSubtractPoint={() =>
+                  handlePointChange(
+                    student,
+                    -1
+                  )
+                }
+                onViewTracking={() =>
+                  setTrackingStudent(
+                    student
+                  )
+                }
+                onEdit={() => {
+                  setFormError(
+                    null
+                  );
+
+                  setFormModal({
+                    mode: "edit",
+                    student,
+                  });
+                }}
+                onDelete={() => {
+                  setDeleteError(
+                    null
+                  );
+
+                  setDeleteTarget(
+                    student
+                  );
+                }}
+              />
+            )
+          )}
         </div>
       )}
 
+      {/* نموذج الطالب */}
       {formModal && (
         <StudentFormModal
-          mode={formModal.mode}
+          mode={
+            formModal.mode
+          }
           initialStudent={
-            formModal.mode === "edit"
+            formModal.mode ===
+            "edit"
               ? formModal.student
               : undefined
           }
-          submitting={formSubmitting}
-          errorMessage={formError}
-          onSubmit={handleFormSubmit}
+          submitting={
+            formSubmitting
+          }
+          errorMessage={
+            formError
+          }
+          onSubmit={
+            handleFormSubmit
+          }
           onClose={() => {
-            if (!formSubmitting) {
-              setFormModal(null);
+            if (
+              !formSubmitting
+            ) {
+              setFormModal(
+                null
+              );
             }
           }}
         />
       )}
 
+            {/* تأكيد الحذف */}
       {deleteTarget && (
         <DeleteConfirmModal
-          studentName={
-            deleteTarget.full_name
-          }
+          studentName={deleteTarget.full_name}
           submitting={deleteSubmitting}
           errorMessage={deleteError}
           onConfirm={handleDeleteConfirm}
@@ -620,15 +913,16 @@ export default function StudentsManager({
         />
       )}
 
+      {/* متابعة الحفظ */}
       {trackingStudent && (
         <MemorizationModal
           student={trackingStudent}
           isAdmin={isAdmin}
-          onClose={() =>
-            setTrackingStudent(null)
-          }
+          onClose={() => {
+            setTrackingStudent(null);
+          }}
         />
       )}
     </div>
   );
-              }
+}
