@@ -726,7 +726,7 @@ export default function StudentsManager({
           />
         </div>
 
-        {isAdmin && (
+       
           <div className="flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
@@ -772,7 +772,7 @@ export default function StudentsManager({
               {t.addStudent}
             </button>
           </div>
-        )}
+        
       </div>
 
       {/* عدد الطلاب */}
