@@ -208,7 +208,7 @@ export default function StudentCard({
         {student.full_name}
       </h3>
 
-      {isAdmin && showPoints ? (
+      { showPoints ? (
         <span className="mt-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold-light/30 px-3 py-1 text-xs font-semibold text-gold-deep">
           {student.points} {t.points}
         </span>
@@ -219,7 +219,7 @@ export default function StudentCard({
       )}
 
       {/* شريط التقدم يظهر مع النقاط فقط */}
-      {isAdmin && showPoints && (
+      {showPoints && (
         <div className="mt-4 w-full">
           <ProgressBar
             points={student.points}
