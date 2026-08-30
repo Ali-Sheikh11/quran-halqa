@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminEmail } from "@/lib/auth/admin";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 
 export default async function AdminLayout({
   children,
@@ -12,14 +13,18 @@ export default async function AdminLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login?redirectedFrom=/admin");
+  if (!user || !isAdminEmail(user.email)) {
+    redirect("/login");
   }
 
-  // طبقة حماية إضافية على مستوى السيرفر، تعمل جنبًا إلى جنب مع middleware.ts
-  if (!isAdminEmail(user.email)) {
-    redirect("/?unauthorized=1");
-  }
-
-  return <div className="min-h-[calc(100vh-64px)] bg-sand-100/50">{children}</div>;
+  return (
+    <div className="min-h-[calc(100vh-64px)] bg-sand-100/50" dir="rtl">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <AdminSidebar />
+          <main className="min-w-0 flex-1">{children}</main>
+        </div>
+      </div>
+    </div>
+  );
 }
