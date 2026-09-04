@@ -459,6 +459,9 @@ export default function StudentsManager({
    * بمفهوم "أمس".
    */
   async function handlePointChange(
+      // التحقق من الإعدادات
+  if (delta > 0 && !settings.allow_add_points) return;
+  if (delta < 0 && !settings.allow_subtract_points) return;
     student: Student,
     delta: number
   ) {
