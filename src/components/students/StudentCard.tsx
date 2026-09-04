@@ -25,6 +25,9 @@ export default function StudentCard({
   isAdmin,
   allStudents,
   showPoints,
+  showRank = true,
+  showMedals = true,
+  showTracking = true,
   onEdit,
   onDelete,
   onAddPoint,
@@ -37,6 +40,9 @@ export default function StudentCard({
   isAdmin: boolean;
   allStudents: Student[];
   showPoints: boolean;
+  showRank?: boolean;
+  showMedals?: boolean;
+  showTracking?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onAddPoint: () => void;
