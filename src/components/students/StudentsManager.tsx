@@ -16,6 +16,7 @@ import DeleteConfirmModal from "./DeleteConfirmModal";
 import StatsBar from "./StatsBar";
 import HallOfFame from "./HallOfFame";
 import MemorizationModal from "./MemorizationModal";
+import type { AppSettings } from "@/lib/settings";
 
 type FormModalState =
   | { mode: "add" }
