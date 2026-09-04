@@ -78,9 +78,11 @@ function isFridayInTurkey(): boolean {
 export default function StudentsManager({
   initialStudents,
   role,
+  settings,
 }: {
   initialStudents: Student[];
   role: "admin" | "viewer";
+  settings: AppSettings;
 }) {
   const isAdmin = role === "admin";
   const [supabase] = useState(() => createClient());
