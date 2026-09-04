@@ -139,15 +139,12 @@ export default function StudentCard({
           {pointEffect === 1 ? "+1" : "−1"}
         </span>
       )}
+{showRank && showMedals && rank <= 3 && (
+  <span className="absolute -top-3 right-1/2 translate-x-1/2 text-xl drop-shadow-sm" aria-hidden="true">
+    {RANK_BADGES[rank]}
+  </span>
+)}
 
-      {rank <= 3 && (
-        <span
-          className="absolute -top-3 right-1/2 translate-x-1/2 text-xl drop-shadow-sm"
-          aria-hidden="true"
-        >
-          {RANK_BADGES[rank]}
-        </span>
-      )}
 
       {celebrate && (
         <span
@@ -280,6 +277,8 @@ export default function StudentCard({
               </svg>
             </button>
           </div>
+{!isAdmin && showTracking && (
+
 
           <button
             type="button"
@@ -304,7 +303,6 @@ export default function StudentCard({
         </div>
       )}
 
-      {!isAdmin && (
         <button
           type="button"
           onClick={onViewTracking}
